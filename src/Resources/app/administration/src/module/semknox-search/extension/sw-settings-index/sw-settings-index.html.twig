@@ -1,0 +1,8 @@
+{% block sw_settings_content_card_slot_plugins %}
+    {% parent %}
+
+    <sw-settings-item :label="$tc('semknox-search.general.mainMenuItemGeneral')"
+                      :to="{ name: 'semknox.search.index' }"
+                      :backgroundEnabled="false">
+    </sw-settings-item>
+{% endblock %}

@@ -1,0 +1,149 @@
+{
+    "semknox-search": {
+        "header": "SiteSearch360",
+        "general": {
+            "mainMenuItemGeneral": "SiteSearch360-Einstellungen",
+            "descriptionTextModule": "Einstellungen für die SiteSearch360",
+            "mainMenuItemLogs": "SiteSearch360-Logs",
+            "mainMenuItemCron": "SiteSearch360-Cronjob",
+            "tabTitleMain": "Einstellungen",
+            "tabTitleLogs": "Logs",
+            "tabTitleCron": "Cronjob"
+        },
+        "messageNotBlank": "Dieser Wert darf nicht leer sein.",
+        "cron" : {
+        	"header": "SiteSearch360 Cronjob/Update",
+        	"resetButtonText": "Reset/Starte Update-Cron",
+        	"card": {
+        		"main": {
+        			"title" : "Aktuelle Daten",
+        			"lastPing" : {
+        				"title": "Zeit seit letztem Cronjob-Aufruf",
+        				"warning": "Seit dem letzten Aufruf des Cronjobs vergingen mehr als 200s. Bitte stellen Sie den Cronjob so ein, dass er mindestens einmal pro 2 Minuten läuft, besser jede Minute!"	,
+        				"error": "Der Cronjob wurde nie gestartet - bitte konsultieren Sie Ihren System-Admin!",
+        				"success": "Seit dem letzten Aufruf des Cronjobs vergingen weniger als 200s."
+        			},
+        			"currentUpdateRunning" : {
+        				"title": "Laufzeit für aktuell laufenden Cronjob",
+        				"warning": "Das aktuelle Update läuft weniger als 2h."	,
+        				"error": "Das aktuelle Update läuft bereits mehr als 2h!",
+        				"success": "Das aktuelle Update läuft weniger als 20min.",
+        				"nodata": "Keine aktuellen Update-Daten!"
+        			},
+        			"lastUpdate" : {
+        				"title": "Laufzeit des letzten vollständigen Cronjobs",
+        				"warning": "Das letzte Update lief weniger als 2h."	,
+        				"error": "Das letzte Update lief mehr als 2h!",
+        				"success": "Das letze Update lief weniger als 20min.",
+        				"nodata": "Keine Update-Daten!"
+        			}
+        		},
+        		"additional": {
+        			"title" : "Zusätzliche Daten"
+        		},
+        		"reset": {
+        			"info" : {
+        				"title": "Reset Cronjob",
+        				"text" : "<strong>Der Reset-Befehl wurde an den Cronjob übermittelt.</strong><br />Sobald dieser wieder aufgerufen wird, werden die aktuellen Daten an siteSearch360 übertragen!"
+        			},
+        			"error" : {
+        				"title": "Reset Cronjob",
+        				"text" : "Es gab einen Fehler bei der Übertragung des Reset-Kommandos!"        				
+        			}
+        		},
+        		"configInfo": {
+        			"title": "Information zur Konfiguration",
+        			"text": "Um das Upload zum SiteSearch360-Server zu starten, müssen Sie einen Cronjob in Ihrer Linux-Konfiguration einstellen!<br/><strong>Fragen Sie hierzu Ihren Administrator!</strong><br/>Hier ist ein Beispiel für eine Konfiguration in der crontab:<br/><br/>",
+        			"text2": "*  */1 * * * * php <span class=\"highlight\">/var/www/shopware</span>/bin/console plugin-commands:semknoxFullUpdate >> <span class=\"highlight\">/var/www/shopware</span>/var/log/semknox/cron.log",
+        			"text3": "<br/>In obigem Beispiel müssen die Pfade (grün) an Ihre lokale Installation angepasst werden.<br/>Dadurch wird der Cronjob jede Minute gestartet, um ein Update von einzelnen Datenblöcken zu gewährleisten."
+        		}
+        	}
+        },
+        "logs" : {
+        	"header": "SiteSearch360 Logdaten",
+        	"actionShowInfo": "Zeige Details",
+        	"list" : {
+        		"logTitle": "Logtitel",
+        		"logState": "Status",
+        		"logType": "Typ",
+        		"logDescr": "Beschreibung",
+        		"createdAt": "Datum"
+        	}
+        },
+        "settingForm": {
+        		"header" : "SiteSearch360 Einstellungen",
+            "saveButtonText": "Speichern",
+            "cancelButtonText": "Abbrechen",
+            "testLive": "API-Zugangsdaten testen",
+            "testSandbox": "Sandbox-API-Zugangsdaten testen",
+            "credentials": {
+                "cardTitle": "Einstellungen",
+                "onBoardingText": "Sie haben noch keinen Zugang zur Site Search 360? Melden Sie sich hier an:",
+                "target": {
+                    "label": "SiteSearch360-Endpunkt",
+                    "tooltipText": "Wählen Sie hier zwischen den Zielpunkten stage und produktiv."
+                },                
+                "customerId": {
+                    "label": "Project-ID",
+                    "tooltipText": "Die Project-ID der REST-API, die das Plugin dazu verwendet, sich mit der SiteSearch360-API zu authentifizieren."
+                },
+                "apiKey": {
+                    "label": "Api-Key",
+                    "tooltipText": "Der Api-Key der REST-API, der vom Plugin dazu verwendet wird, sich mit der SiteSearch360-API zu authentifizieren."
+                },
+                "enableSearch": {
+                    "label": "SiteSearch360 aktivieren",
+                    "tooltipText": "Aktiviere diese Option, um die Suche im Frontend zu aktivieren."
+                },
+                "enableUpdate": {
+                    "label": "SiteSearch360-Update aktivieren",
+                    "tooltipText": "Aktiviere diese Option, um den Upload der Daten zur SiteSearch360-Api zu aktivieren."
+                },
+                "updateBlocksize": {
+                	"label" : "Anzahl der Produkte pro Datenblock im Update",
+                	"tooltipText": "Die Anzahl der gleichzeitig zu verarbeitenden Produkte pro Datenblock."
+                },
+                "button": {
+                    "title": "API-Zugangsdaten holen",
+                    "titleAlt": "",
+                    "tooltipText": "Hole neue Zugangsdaten für diesen Subshop.",
+                    "OnErrortext": "Bei der Abfrage der Daten trat ein Fehler auf:"
+                    
+                }
+            },
+            "preferences": {
+            	"cardTitle" : "allgemeine Einstellungen",
+            	"cronTime" : {
+            		"label" : "Cronjob starten (Stunde)",
+            		"tooltipText": "Stunde, zu der der Cronjob gestartet werden soll."
+            	},
+            	"cronInterval": {
+            		"label": "Cronjob Interval",
+            		"tooltipText": "alle wie viel Stunden soll Cronjob gestartet werden."
+            	}
+            },
+            "options" : {
+            		"target" : {
+            				"productive" : "Produktiv-System",
+            				"stage" : "Entwickler-System"
+            		}
+            },
+            "notifications" : {
+         				"save" : {
+         					"title" : "Einstellungen speichern",
+         					"msgSuccess": "Die Einstellungen wurden gespeichert.",
+         					"msgError": "Es gab einen Fehler beim Speichern der Einstellungen.",
+         					"msgErrorCreds": "Die eingegebenen Zugangsdaten konnten nicht verifiziert werden!"
+         				}
+            },
+            "titleSuccess": "Erfolg",
+            "titleError": "Fehler",
+            "messageSaveSuccess": "Die SiteSearch360-Einstellungen wurden gespeichert.",
+            "messageTestSuccess": "Die API-Zugangsdaten wurden validiert.",
+            "messageTestError": "Die API-Zugangsdaten konnten nicht validiert werden.",            
+            "messageWebhookCreated": "Der Webhook wurde registriert.",
+            "messageWebhookUpdated": "Der Webhook wurde aktualisiert.",
+            "messageWebhookError": "Der Webhook konnte nicht gespeichert werden. Folgende Fehler sind aufgetreten:"            
+        }
+    }
+}

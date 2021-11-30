@@ -1,0 +1,149 @@
+{
+    "semknox-search": {
+        "header": "SiteSearch360",
+        "general": {
+            "mainMenuItemGeneral": "SiteSearch360-settings",
+            "descriptionTextModule": "SiteSearch360 settings",
+            "mainMenuItemLogs": "SiteSearch360-logs",
+            "mainMenuItemCron": "SiteSearch360-cronjob",
+						"tabTitleMain": "Settings",
+            "tabTitleLogs": "Logs",
+            "tabTitleCron": "Cronjob"
+        },
+        "messageNotBlank": "This value should not be blank.",
+        "cron" : {
+        	"header": "SiteSearch360 cronjob/updates",
+        	"resetButtonText": "Reset/Start UpdateCron",
+        	"card": {
+        		"main": {
+        			"title" : "Current data",
+        			"lastPing" : {
+        				"title": "Time of last cronjob-ping",
+        				"warning": "The last cronjob ran more than 200seconds ago. Please setup the job at least one time every 2 min, better every 1min.!"	,
+        				"error": "The cronjob has never been started. Please refer to your sys-admin!",
+        				"success": "The last cronjob ran less than 200seconds ago."
+        			},
+        			"currentUpdateRunning" : {
+        				"title": "Time of current running cronjob",
+        				"warning": "The current update takes less than 2hours."	,
+        				"error": "The current update takes more than 2hours!",
+        				"success": "The current update takes less than 20minutes.",
+        				"nodata": "No current update-data!"
+        			},
+        			"lastUpdate" : {
+        				"title": "Time of last completed cronjob",
+        				"warning": "The last update took less than 2hours."	,
+        				"error": "The last update took more than 2hours!",
+        				"success": "The last update took less than 20minutes.",
+        				"nodata": "No update-data!"
+        			}
+        		},
+        		"additional": {
+        			"title" : "Additional data"
+        		},
+        		"reset": {
+        			"info" : {
+        				"title": "Reset cronjob",
+        				"text" : "<strong>The reset-command was sent to the server.</strong><br />As far as the cronjob is running, the new data will be transfered to the SiteSearch360-server."
+        			},
+        			"error" : {
+        				"title": "Reset cronjob",
+        				"text" : "There was an error sending the reset-command!"        				
+        			}
+        		},
+        		"configInfo": {
+        			"title": "How to configure",
+        			"text": "To start the upload to the SiteSearch360-Server, you have to create a cronjob in your system-config.<br/><strong>Please ask your administrator!</strong><br/>Following you will find an example for the entry in your crontab:<br/><br/>",
+        			"text2": "*  */1 * * * * php <span class=\"highlight\">/var/www/shopware</span>/bin/console plugin-commands:semknoxFullUpdate >> <span class=\"highlight\">/var/www/shopware</span>/var/log/semknox/cron.log",
+        			"text3": "<br/>Please adjust the paths (higlighted) according your shopware-installation.<br/>With this configuration the cronjob will be started once per minute, which is necessary for uploading several datablocks."        			
+        		}
+        	}        	
+        },
+        "logs" : {
+        	"header": "SiteSearch360 logdata",
+        	"actionShowInfo": "Show details",        	
+        	"list" : {
+        		"logTitle": "Titel",
+        		"logState": "State",
+        		"logType": "Type",
+        		"logDescr": "Description",
+        		"createdAt": "Created at"
+        	}
+        },
+        "settingForm": {
+        		"header" : "SiteSearch360 settings",
+            "saveButtonText": "Save",
+            "cancelButtonText": "Cancel",
+            "testLive": "Test API credentials",
+            "testSandbox": "Test sandbox API credentials",
+            "credentials": {
+                "cardTitle": "Settings",
+                "onBoardingText": "You don't hava any credentials for Site Search 360 yet? Register here:",
+                "target": {
+                    "label": "SiteSearch360-target",
+                    "tooltipText": "Choose between the SiteSearch360-targets stage and production."
+                },                
+                "customerId": {
+                    "label": "Project-ID",
+                    "tooltipText": "The REST API project ID is used to authenticate this plugin with the SiteSearch360-API."
+                },
+                "apiKey": {
+                    "label": "Api Key",
+                    "tooltipText": "The REST API api key is used to authenticate this plugin with the SiteSearch360-API."
+                },
+                "enableSearch": {
+                    "label": "Activate SiteSearch360",
+                    "tooltipText": "Activate this option to use the SiteSearch360 in the frontend."
+                },
+                "enableUpdate": {
+                    "label": "Activate SiteSearch360-update",
+                    "tooltipText": "Activate this option to start uploading data to the SiteSearch360-API"
+                },
+                "updateBlocksize": {
+                	"label" : "Count of products per update-datablock",
+                	"tooltipText": "The number of products per datablock in the update-procedure."
+                },
+                "button": {
+                    "title": "Get API-credentials",
+                    "titleAlt": "",
+                    "tooltipText": "Get new credentials for this subshop",
+                    "OnErrortext": "An error occured during request:"
+                }
+            },
+						"preferences": {
+            	"cardTitle" : "Preferences",
+            	"cronTime" : {
+            		"label" : "Cronjob starttime (hour)",
+            		"tooltipText": "Hour of the day, where the cronjob should start."
+            	},
+            	"cronInterval": {
+            		"label": "Cronjob Interval",
+            		"tooltipText": "After how many hours the cronjob should be repeated."
+            	}
+            },  
+            "options" : {
+            		"target" : {
+            				"productive" : "Production-system",
+            				"stage" : "Stage-system"
+            		}
+            },
+            "notifications" : {
+         				"save" : {
+         					"title" : "Save preferences",
+         					"msgSuccess": "Preferences saved successfully.",
+         					"msgError": "Error on saving preferences.",
+         					"msgErrorCreds": "Your credentials could not be verified!"
+         				}
+            },
+
+            "titleSuccess": "Success",
+            "titleError": "Error",
+            "messageSaveSuccess": "The SiteSearch360 settings have been saved.",
+            "messageTestSuccess": "The credentials have been validated.",
+            "messageTestError": "The credentials could not be validated.",
+            "messageWebhookCreated": "The webhook has been registered.",
+            "messageWebhookUpdated": "The webhook has been updated.",
+            "messageWebhookError": "The webhook could not be saved. The following errors occured:"
+        }
+    }
+}

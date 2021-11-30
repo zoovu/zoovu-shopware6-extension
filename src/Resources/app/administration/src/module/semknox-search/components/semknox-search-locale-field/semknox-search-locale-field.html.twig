@@ -1,0 +1,57 @@
+{% block sw_text_field %}
+    {% block semknox_search_locale_field %}
+        <div class="semknox-search-locale-field">
+
+            {% block semknox_search_locale_field_contextual_field %}
+                <sw-contextual-field class="sw-field--text"
+                                     v-bind="$attrs"
+                                     :name="formFieldName"
+                                     :error="error"
+                                     @inheritance-restore="$emit('inheritance-restore', $event)"
+                                     @inheritance-remove="$emit('inheritance-remove', $event)"
+                                     v-on="$listeners">
+
+                    <template #sw-field-input="{ identification, error, disabled, size, setFocusClass, removeFocusClass, hasSuffix, hasPrefix }">
+                        <input type="text"
+                               :name="identification"
+                               :id="identification"
+                               :disabled="disabled"
+                               :value="currentValue"
+                               :placeHolder="placeholder"
+                               @input="onInput"
+                               @focus="setFocusClass"
+                               @blur="onBlur($event, removeFocusClass)"
+                               v-on="additionalListeners">
+                    </template>
+                </sw-contextual-field>
+            {% endblock %}
+
+            {% block semknox_search_locale_field_information %}
+                <p class="semknox-search-locale-field__text">
+
+                    {% block semknox_search_locale_field_information_text %}
+                        {{ $tc('semknox-search.settingForm.locale-field.infobox.text') }}
+                    {% endblock %}
+
+                    {% block semknox_search_locale_field_information_href %}
+                        <a class="semknox-search-locale-field__text-href"
+                           href="https://google.de/"
+                           target="_blank">
+                            {{ $tc('semknox-search.settingForm.locale-field.infobox.href') }}
+                        </a>
+                    {% endblock %}
+
+                    {% block semknox_search_locale_field_information_icon %}
+                        <sw-icon class="semknox-search-locale-field__text-icon"
+                                 name="default-action-external"
+                                 size="7.5">
+                        </sw-icon>
+                    {% endblock %}
+
+                </p>
+            {% endblock %}
+
+        </div>
+    {% endblock %}
+
+{% endblock %}

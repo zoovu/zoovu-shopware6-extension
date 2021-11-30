@@ -1,0 +1,62 @@
+@import "~scss/variables";
+
+.semknox-search-settings-credentials-fields{
+    margin: 30px;
+    
+    .error-container {
+    	padding:15px;
+    	border: 1px solid #de294c;
+    }
+}
+
+#siteSearchOnBoardingContainer {
+	margin-top: 30px;
+	padding: 20px;
+  border: 1px solid #999;	
+	
+	
+	p.ss360__p {
+		font-size: 16px;
+	}
+	
+	form.ss360__form {
+		margin: 15px 0;
+	}
+	
+	.ss360__button {
+		margin-top: 15px;
+	}
+	
+}
+
+.semknox-search-cron {
+	.sw-color-badge {
+		width: 15px;
+		height: 15px;
+		margin-top: 5px;
+	}
+	
+	.text-container {
+		margin-bottom: 15px;
+	}
+	
+	.highlight {
+		color:#00DD33;
+		font-weight: 700;
+	}
+}
+	
+h2.semknox-search-header {
+
+	a {		
+		font-weight: 300;
+		color: $color-darkgray-200;
+		margin-left: 15px;
+	}
+	
+	a.router-link-active {
+		font-weight: 700;
+		text-decoration: none;
+		color: $color-darkgray-200;
+	}
+}	

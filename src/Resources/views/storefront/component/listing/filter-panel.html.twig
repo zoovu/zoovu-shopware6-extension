@@ -1,0 +1,89 @@
+{% sw_extends '@Storefront/storefront/component/listing/filter-panel.html.twig' %}
+
+    {# @var listing \Shopware\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult #}
+    {% block component_filter_panel_element %}
+    {% if not listing.extensions.semknoxResultData is empty %}
+        <div class="filter-panel{% if sidebar %} is--sidebar{% endif %}">        
+            {% block component_filter_panel_items_container %}
+            {% if not listing.extensions.semknoxResultData is empty %}  
+                <div class="filter-panel-items-container">
+
+                    {% block component_filter_panel_item_properties %}
+                                    {% if not listing.extensions.semknoxResultData is empty %}
+                        {# @var properties \Shopware\Core\Framework\DataAbstractionLayer\Search\AggregationResult\Metric\EntityResult #}
+                        {% set properties = listing.aggregations.get('properties') %}
+
+                        {% if not properties.entities is empty %}
+                            {% for property in properties.entities %}
+                                {% sw_include '@Storefront/storefront/component/listing/filter/filter-property-select.html.twig' with {
+                                    elements: property.options,
+                                    sidebar: sidebar,
+                                    name: 'properties',
+                                    displayName: property.translated.name,
+                                    displayType: property.displayType,
+                                    pluginSelector: 'filter-property-select'
+                                } %}
+                            {% endfor %}
+                        {% endif %}
+                                    {% else  %}
+                                        {{ parent() }}
+                                    {% endif %}                
+                    {% endblock %}
+
+                    {% block component_filter_panel_item_price %}
+                                    {% if not listing.extensions.semknoxResultData is empty %}
+                            {% set extensions = listing.extensions %}
+                        {% for ext in extensions %}
+                                {% for mmfilter in ext.filter %}
+                                    {% if mmfilter.semkAr %}
+                                
+                                        {% sw_include '@Storefront/storefront/component/listing/filter/filter-semk-range.html.twig' with {
+                                            price: mmfilter.semkSr,
+                                            sidebar: sidebar,
+                                            name: mmfilter.semkAr.name,
+                                            minKey: mmfilter.semkSr.name ~ '_min',
+                                            maxKey: mmfilter.semkSr.name ~ '_max',
+                                            displayName: mmfilter.semkAr.name|trans|sw_sanitize,
+                                        } %}
+                                    
+                                                      {% endif %}
+                                {% endfor %}
+                        {% endfor %}
+
+                        {% set price = listing.aggregations.get('price') %}
+
+                        {% if price.min > 0 and price.max > 0 %}
+                            {% sw_include '@Storefront/storefront/component/listing/filter/filter-range.html.twig' with {
+                                price: price,
+                                sidebar: sidebar,
+                                name: 'price',
+                                minKey: 'min-price',
+                                maxKey: 'max-price',
+                                displayName: 'listing.filterPriceDisplayName'|trans|sw_sanitize,
+                            } %}
+                        {% endif %}
+                                    {% else  %}
+                                        {{ parent() }}
+                                    {% endif %}                
+                    {% endblock %}
+
+                </div>
+                    {% else  %}
+                        {{ parent() }}
+                    {% endif %}                
+            {% endblock %}
+
+            {% block component_filter_panel_active_container %}
+                    {% if not listing.extensions.semknoxResultData is empty %}
+                <div class="filter-panel-active-container">
+                    {% block component_filter_panel_active_container_inner %}{% endblock %}
+                </div>
+                    {% else  %}
+                        {{ parent() }}
+                    {% endif %}                
+            {% endblock %}
+        </div>
+    {% else  %}
+        {{ parent() }}
+    {% endif %}
+    {% endblock %}

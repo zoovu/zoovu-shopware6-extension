@@ -1,0 +1,125 @@
+{% block semknox_search_cron %}
+    <sw-page class="semknox-search-cron">
+
+				{% block semknox_search_header %}
+					<template #smart-bar-header>
+						<h2 class="semknox-search-header">
+							{{ $tc('semknox-search.header') }}
+              {% block semknox_search_header_tabs %}
+                    
+                <router-link class="semknox_search_header__tab-config"
+                             :to="pathToConfig">
+                             {{ $tc('semknox-search.general.tabTitleMain') }}
+                </router-link>
+                <router-link class="semknox_search_header__tab-logs"
+                             :to="pathToLogs">
+                             {{ $tc('semknox-search.general.tabTitleLogs') }}
+                </router-link>
+                <router-link class="semknox_search_header__tab-cron"
+                             :to="pathToCron">
+                             {{ $tc('semknox-search.general.tabTitleCron') }}
+                </router-link>
+							{% endblock %}
+						</h2>
+					</template>
+				{% endblock %}
+
+				{% block semknox_search_actions %}
+					<template #smart-bar-actions>
+						{% block semknox_search_actions_save %}
+							<sw-button-process 
+								class="sw-settings-login-registration__save-action"
+								@click="onResetData">
+								{{ $tc('semknox-search.cron.resetButtonText') }}
+							</sw-button-process>
+						{% endblock %}
+
+					</template>
+				{% endblock %}
+  	    
+
+        <template slot="content">
+					{% block semknox_search_cron_content_card %}
+						<sw-card-view>
+											{% block semknox_search_cron_content_card_config %}
+												<sw-card :title="$tc('semknox-search.cron.card.configInfo.title')" v-if="showConfigInfo">
+															<p v-html="$tc('semknox-search.cron.card.configInfo.text')">														
+															<p v-html="$tc('semknox-search.cron.card.configInfo.text2')">														
+															<p v-html="$tc('semknox-search.cron.card.configInfo.text3')">														
+												</sw-card>						
+											{% endblock %}
+
+						
+											{% block semknox_search_cron_content_card_reset_info %}
+												<sw-card :title="$tc('semknox-search.cron.card.reset.info.title')" v-if="showResetInfo">
+															<p v-html="$tc('semknox-search.cron.card.reset.info.text')">
+														
+												</sw-card>						
+											{% endblock %}
+
+											{% block semknox_search_cron_content_card_reset_error %}
+												<sw-card :title="$tc('semknox-search.cron.card.reset.error.title')" v-if="showResetError">
+															<p v-html="$tc('semknox-search.cron.card.reset.error.text')">
+												</sw-card>						
+											{% endblock %}
+						
+											{% block semknox_search_cron_content_card_main %}
+												<sw-card :title="$tc('semknox-search.cron.card.main.title')">
+													
+														<sw-container columns="2fr 1fr 1fr" gap="0px 30px" class="text-container">
+															<span>
+																{{ $tc('semknox-search.cron.card.main.lastPing.title') }}
+															</span>
+															<span>
+																{{lastPingTime}}s
+															</span>
+			                        <sw-color-badge v-if="lastPingTime === 0" variant="error" :title="$tc('semknox-search.cron.card.main.lastPing.error')"></sw-color-badge>
+			                        <sw-color-badge v-else-if="lastPingTime < 200" variant="success" :title="$tc('semknox-search.cron.card.main.success')"></sw-color-badge>
+			                        <sw-color-badge v-else variant="warning" :title="$tc('semknox-search.cron.card.main.lastPing.warning')"></sw-color-badge>
+														</sw-container>
+
+														<sw-container columns="2fr 1fr 1fr" gap="0px 30px" class="text-container">
+															<span>
+																{{ $tc('semknox-search.cron.card.main.currentUpdateRunning.title') }}
+															</span>
+															<span>
+																{{currentUpdateRunning}}s
+															</span>
+			                        <sw-color-badge v-if="currentUpdateRunning === 0" :title="$tc('semknox-search.cron.card.main.currentUpdateRunning.nodata')"></sw-color-badge>
+			                        <sw-color-badge v-else-if="currentUpdateRunning < 1200" variant="success" :title="$tc('semknox-search.cron.card.main.currentUpdateRunning.success')"></sw-color-badge>
+			                        <sw-color-badge v-else-if="currentUpdateRunning < 7200" variant="warning" :title="$tc('semknox-search.cron.card.main.currentUpdateRunning.warning')"></sw-color-badge>
+			                        <sw-color-badge v-else variant="error" :title="$tc('semknox-search.cron.card.main.currentUpdateRunning.error')"></sw-color-badge>
+														</sw-container>
+
+														<sw-container columns="2fr 1fr 1fr" gap="0px 30px">
+															<span>
+																{{ $tc('semknox-search.cron.card.main.lastUpdate.title') }}
+															</span>
+															<span>
+																{{lastUpdateTime}}s
+															</span>
+			                        <sw-color-badge v-if="lastUpdateTime === 0" :title="$tc('semknox-search.cron.card.main.lastUpdate.nodata')"></sw-color-badge>
+			                        <sw-color-badge v-else-if="lastUpdateTime < 1200" variant="success" :title="$tc('semknox-search.cron.card.main.lastUpdate.success')"></sw-color-badge>
+			                        <sw-color-badge v-else-if="lastUpdateTime < 7200" variant="warning" :title="$tc('semknox-search.cron.card.main.lastUpdate.warning')"></sw-color-badge>
+			                        <sw-color-badge v-else variant="error" :title="$tc('semknox-search.cron.card.main.lastUpdate.error')"></sw-color-badge>
+														</sw-container>
+
+												</sw-card>						
+											{% endblock %}
+											
+											{% block semknox_search_cron_content_card_additional %}
+												<sw-card :title="$tc('semknox-search.cron.card.additional.title')" v-if="showAdditionalData">
+
+												</sw-card>						
+											{% endblock %}
+											
+											
+						</sw-card-view>
+						
+						
+					{% endblock %}
+
+            
+        </template>
+    </sw-page>
+{% endblock %}

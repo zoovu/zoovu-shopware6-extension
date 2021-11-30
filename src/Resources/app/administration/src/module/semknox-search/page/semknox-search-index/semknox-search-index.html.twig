@@ -1,0 +1,347 @@
+{% block semknox_search_index %}
+    <sw-page class="semknox-search-index">
+
+			{% block semknox_search_header %}
+				<template #smart-bar-header>
+
+					<h2 class="semknox-search-header">
+						{{ $tc('semknox-search.header') }}
+						
+              {% block semknox_search_header_tabs %}
+                    
+                <router-link class="semknox_search_header__tab-config"
+                             :to="pathToConfig">
+                             {{ $tc('semknox-search.general.tabTitleMain') }}
+                </router-link>
+                <router-link class="semknox_search_header__tab-logs"
+                             :to="pathToLogs">
+                             {{ $tc('semknox-search.general.tabTitleLogs') }}
+                </router-link>
+                <router-link class="semknox_search_header__tab-cron"
+                             :to="pathToCron">
+                             {{ $tc('semknox-search.general.tabTitleCron') }}
+                </router-link>
+							{% endblock %}
+						
+					</h2>
+				</template>
+			{% endblock %}
+
+
+			{% block semknox_search_content %}
+				<template #content>
+
+					{% block semknox_search_content_card %}
+						<sw-card-view>
+
+							{% block semknox_search_content_card_channel_config %}
+								<sw-sales-channel-config v-model="ScLangConfigData"
+									ref="configComponent"
+									domain="semknoxSearch.config">
+
+									{% block semknox_search_content_card_channel_config_sales_channel %}
+										<template #select="{ onInput, selectedSalesChannelId }">
+
+											{% block semknox_search_content_card_channel_config_sales_channel_card %}
+												<sw-card :title="$tc('global.entities.sales_channel', 2)">
+
+													{% block semknox_search_content_card_channel_config_sales_channel_card_title %}
+														<sw-single-select v-model="selectedSalesChannelId"
+															labelProperty="translated.name"
+															valueProperty="id"
+															:isLoading="isLoading"
+															:options="salesChannels"
+															:disabled="!aclAllowed('semknox_search.editor')"
+															@change="onInputSalesChannel">
+														</sw-single-select>
+													{% endblock %}
+													
+													{% block semknox_search_content_card_channel_config_language_card_title %}
+													<template v-if="selectedSalesChannelId">
+                            <sw-single-select v-model="selectedDomainId"
+                                              labelProperty="name"
+                                              valueProperty="id"
+																							:isLoading="isLoading"
+                                              :options="getSalesChannelDomains"
+																							:disabled="!aclAllowed('semknox_search.editor')"
+																							@change="onInputDomain">
+                            </sw-single-select>					
+													</template>
+												{% endblock %}
+												</sw-card>
+											{% endblock %}
+
+
+											{% block semknox_search_content_card_channel_config_credentials %}
+											<div v-if="getSelectedDomainId">
+											    <sw-card class="sw-card--grid"
+											             :title="$tc('semknox-search.settingForm.credentials.cardTitle')">
+											        {% block semknox_search_content_card_channel_config_credentials_card_container %}
+									                {% block semknox_search_content_card_channel_config_credentials_card_container_settings %}
+								                    <div v-if="getSelectedDomainId" class="semknox-search-settings-credentials-fields">
+									             
+							                        {% block semknox_search_content_card_channel_config_credentials_card_container_settings_customer_id %}
+							                            <sw-inherit-wrapper v-model="ScLangConfigData['semknoxSearch.config.semknoxC01CustomerId']"
+							                                                :customInheritationCheckFunction="checkTextFieldInheritance">
+							                                <template #content="props">
+							                                    <sw-text-field name="semknoxSearch.config.semknoxC01CustomerId"
+							                                                   :mapInheritance="props"
+							                                                   :label="$tc('semknox-search.settingForm.credentials.customerId.label')"
+							                                                   :helpText="$tc('semknox-search.settingForm.credentials.customerId.tooltipText')"
+							                                                   :value="props.currentValue"
+							                                                   :error="customerIdErrorState"
+							                                                   @change="props.updateCurrentValue">
+							                                    </sw-text-field>
+							                                </template>
+							                            </sw-inherit-wrapper>
+							                        {% endblock %}
+
+											              	{% block semknox_search_content_card_channel_config_credentials_card_container_settings_api_key %}
+											              	    <sw-inherit-wrapper v-model="ScLangConfigData['semknoxSearch.config.semknoxC01ApiKey']"
+											              	                        :customInheritationCheckFunction="checkTextFieldInheritance">
+											              	        <template #content="props">
+											              	            <sw-text-field name="semknoxSearch.config.semknoxC01ApiKey"
+											              	                           :mapInheritance="props"
+											              	                           :label="$tc('semknox-search.settingForm.credentials.apiKey.label')"
+											              	                           :helpText="$tc('semknox-search.settingForm.credentials.apiKey.tooltipText')"
+											              	                           :value="props.currentValue"
+											              	                           :error="apiKeyErrorState"
+											              	                           @change="props.updateCurrentValue">
+											              	            </sw-text-field>
+											              	        </template>
+											              	    </sw-inherit-wrapper>
+											              	{% endblock %}
+                                    	
+											              	{% block semknox_search_content_card_channel_config_credentials_card_container_settings_actions_get_credentials %}
+											              	    <template >
+											              	    		<div v-if="activateOnBoardingButton">
+												              	    		<p>{{ $tc('semknox-search.settingForm.credentials.onBoardingText') }}</p>
+												              	        <a class="sw-button" id="siteSearchOnBoardingButton"                                
+												              	           :disabled="activateOnBoardingButton"
+												              	           @click="activateOnBoarding">
+												              	            {{ $tc('semknox-search.settingForm.credentials.button.title') }}
+												              	        </a>
+											              	        </div>
+													          	        <template v-if="isErrorInOnboarding">
+														        	          <sw-container class="error-container sw-field__error">
+														        	          	<p class="semknoxErrorOnboardingTitle" v-html="$tc('semknox-search.settingForm.credentials.button.OnErrortext')">
+														        	          	<p class="semknoxErrorOnboarding">{{onBoardingErrorMsg}}</p>
+														        	          </sw-container>
+													          	        </template>
+											              	    
+											              	        <div id="siteSearchOnBoardingContainerWrapper" v-if="showOnBoardingContainer">
+											              	        	<div id="siteSearchOnBoardingContainer" v-if="showOnBoardingContainer">
+											              	        	</div>
+											              	        </div>
+											              	    </template>
+                                    	
+											              	    
+											              	{% endblock %}
+                                    	
+											              	{% block semknox_search_content_card_channel_config_credentials_card_container_settings_enable_search %}
+											              	    <sw-inherit-wrapper v-model="ScLangConfigData['semknoxSearch.config.semknoxActivate']"
+											              	                        :customInheritationCheckFunction="checkBoolFieldInheritance">
+											              	        <template #content="props">
+											              	            <sw-switch-field name="semknoxSearch.config.semknoxActivate"
+											              	                             :mapInheritance="props"
+											              	                             :label="$tc('semknox-search.settingForm.credentials.enableSearch.label')"
+											              	                             :helpText="$tc('semknox-search.settingForm.credentials.enableSearch.tooltipText')"
+											              	                             :disabled="props.isInherited || !aclAllowed('semknox_search.editor')"
+											              	                             :value="props.currentValue"
+											              	                             @change="props.updateCurrentValue">
+											              	            </sw-switch-field>
+											              	        </template>
+											              	    </sw-inherit-wrapper>
+											              	{% endblock %}
+                                    	
+											              	{% block semknox_search_content_card_channel_config_credentials_card_container_settings_enable_update %}
+											              	    <sw-inherit-wrapper v-model="ScLangConfigData['semknoxSearch.config.semknoxActivateUpdate']"
+											              	                        :customInheritationCheckFunction="checkBoolFieldInheritance">
+											              	        <template #content="props">
+											              	            <sw-switch-field name="semknoxSearch.config.semknoxActivateUpdate"
+											              	                             :mapInheritance="props"
+											              	                             :label="$tc('semknox-search.settingForm.credentials.enableUpdate.label')"
+											              	                             :helpText="$tc('semknox-search.settingForm.credentials.enableUpdate.tooltipText')"
+											              	                             :disabled="props.isInherited || !aclAllowed('semknox_search.editor')"
+											              	                             :value="props.currentValue"
+											              	                             @change="props.updateCurrentValue">
+											              	            </sw-switch-field>
+											              	        </template>
+											              	    </sw-inherit-wrapper>
+											              	{% endblock %}
+                                    	
+
+								                    </div>
+
+									                {% endblock %}
+											        {% endblock %}
+											        
+						        					{% block semknox_search_credentials_actions_save %}
+																<sw-button-process v-model="isSaveSuccessful"
+																	class="sw-settings-login-registration__save-action"
+																	variant="primary"
+																	:isLoading="isLoading"
+																	:disabled="isLoading || savingDisabled || hasError || !aclAllowed('semknox_search.editor')"
+																	@click="onSave">
+																	{{ $tc('semknox-search.settingForm.saveButtonText') }}
+																</sw-button-process>
+															{% endblock %}
+
+											             
+											    </sw-card>
+											</div>											    
+											{% endblock %}
+
+
+											{% block semknox_search_content_card_channel_config_preferences %}
+											<div v-if-not="selectedSalesChannelId">
+											    <sw-card class="sw-card--grid"
+											             :title="$tc('semknox-search.settingForm.preferences.cardTitle')">
+											        {% block semknox_search_content_card_channel_config_preferences_card_container %}
+									                {% block semknox_search_content_card_channel_config_preferences_card_container_settings %}
+								                    <div class="semknox-search-settings-credentials-fields">
+
+											              	{% block semknox_search_content_card_channel_config_preferences_card_container_settings_update_crontime %}
+											              	    <sw-inherit-wrapper v-model="ScLangPrefConfigData['semknoxSearch.config.semknoxUpdateCronTime']"
+											              	                        :customInheritationCheckFunction="checkTextFieldInheritance">
+											              	        <template #content="props">
+											              	        
+											                            <sw-single-select v-model="ScLangPrefConfigData['semknoxSearch.config.semknoxUpdateCronTime']"
+											                                              labelProperty="title"
+											                                              valueProperty="val"
+												              	                            :label="$tc('semknox-search.settingForm.preferences.cronTime.label')"
+												              	                            :helpText="$tc('semknox-search.settingForm.preferences.cronTime.tooltipText')"
+											                                              :options="getPrefsCronHours"
+																																		:disabled="!aclAllowed('semknox_search.editor')">
+											                            </sw-single-select>					
+											              	        
+											              	        </template>
+											              	    </sw-inherit-wrapper>
+											              	{% endblock %}
+
+											              	{% block semknox_search_content_card_channel_config_preferences_card_container_settings_update_croninterval %}
+											              	    <sw-inherit-wrapper v-model="ScLangPrefConfigData['semknoxSearch.config.semknoxUpdateCronInterval']"
+											              	                        :customInheritationCheckFunction="checkTextFieldInheritance">
+											              	        <template #content="props">
+											              	        
+											                            <sw-single-select v-model="ScLangPrefConfigData['semknoxSearch.config.semknoxUpdateCronInterval']"
+											                                              labelProperty="title"
+											                                              valueProperty="val"
+													              	                          :label="$tc('semknox-search.settingForm.preferences.cronInterval.label')"
+													              	                          :helpText="$tc('semknox-search.settingForm.preferences.cronInterval.tooltipText')"											                                              
+											                                              :options="getPrefsCronInterval"
+																																		:disabled="!aclAllowed('semknox_search.editor')">
+											                            </sw-single-select>					
+											              	        
+											              	        </template>
+											              	    </sw-inherit-wrapper>
+											              	{% endblock %}
+
+
+											              	{% block semknox_search_content_card_channel_config_preferences_card_container_settings_update_blocksize %}
+											              	    <sw-inherit-wrapper v-model="ScLangPrefConfigData['semknoxSearch.config.semknoxUpdateBlocksize']"
+											              	                        :customInheritationCheckFunction="checkTextFieldInheritance">
+											              	        <template #content="props">
+											              	            <sw-number-field name="semknoxSearch.config.semknoxUpdateBlocksize"
+											              	                           :mapInheritance="props"
+											              	                           :label="$tc('semknox-search.settingForm.credentials.updateBlocksize.label')"
+											              	                           :helpText="$tc('semknox-search.settingForm.credentials.updateBlocksize.tooltipText')"
+											              	                           :disabled="props.isInherited || !aclAllowed('semknox_search.editor')"
+											              	                           :value="props.currentValue"
+											              	                           :min=20
+											              	                           :max=100000
+											              	                           @change="props.updateCurrentValue">
+											              	            </sw-text-field>
+											              	        </template>
+											              	    </sw-inherit-wrapper>
+											              	{% endblock %}
+								                  
+
+
+
+								                    </div>
+								                  {% endblock %}
+								                  								                  
+								              {% endblock %}
+						        					{% block semknox_search_preferences_actions_save %}
+																<sw-button-process v-model="isPrefsSaveSuccessful"
+																	class="sw-settings-login-registration__save-action"
+																	variant="primary"
+																	:isLoading="isPrefsLoading"
+																	:disabled="isPrefsLoading || savingPrefsDisabled || hasPrefsError || !aclAllowed('semknox_search.editor')"
+																	@click="onSavePrefs">
+																	{{ $tc('semknox-search.settingForm.saveButtonText') }}
+																</sw-button-process>
+															{% endblock %}
+								              
+								          </sw-card>
+								      </div>
+								      {% endblock %}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+										</template>
+									{% endblock %}
+
+									{% block semknox_search_content_card_channel_config_cards %}
+											<div >
+										<template #content="{ ScLangConfigData, selectedSalesChannelId }">
+
+												{% block semknox_search_content_card_channel_config_credentials_card %}
+												    <semknox-search-credentials :ScLangConfigData="ScLangConfigData"
+												                           :selectedSalesChannelId="selectedSalesChannelId"
+												                           :getSelectedLanguageId="getSelectedLanguageId"
+												                           :getScLangConfigData="getScLangConfigData"												                           
+												                           :CurrentCustomerId="CurrentCustomerId"
+												                           :CurrentApiKey="CurrentApiKey"
+												                           :customerIdErrorState="customerIdErrorState"
+												                           :apiKeyErrorState="apiKeyErrorState"
+												                           :apiTargetErrorState="apiTargetErrorState"
+												                           :clientIdSandboxErrorState="clientIdSandboxErrorState"
+												                           :clientSecretSandboxErrorState="clientSecretSandboxErrorState"
+												                           :customerIdFilled="customerIdFilled"
+												                           :apiKeyFilled="apiKeyFilled"
+												                           :apiTargetFilled="apiKeyFilled"
+												                           :clientIdSandboxFilled="clientIdSandboxFilled"
+												                           :clientSecretSandboxFilled="clientSecretSandboxFilled"
+												                           :isLoading="isLoading"
+												                           :shopData="shopData"
+												                           :showOnBoarding="showOnBoarding">
+												    </semknox-search-credentials>
+												{% endblock %}
+												
+
+										</template>
+											</div>
+									{% endblock %}
+									
+
+								</sw-sales-channel-config>
+							{% endblock %}
+							
+							
+
+							{% block semknox_search_content_card_loading %}
+								<sw-loader v-if="isLoading"></sw-loader>
+							{% endblock %}
+
+						</sw-card-view>
+					{% endblock %}
+
+				</template>
+			{% endblock %}  	    
+
+    </sw-page>
+{% endblock %}

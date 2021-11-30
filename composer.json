@@ -1,0 +1,44 @@
+{
+	"name" : "semknox/semknox-search",
+	"description" : "Stellt einen Such-Controller zur Nutzung der semantischen Suche von SiteSearch360 bereit. Zur Nutzung benötigen Sie eine API-Key und eine Customer-ID, die Sie während der Installation abfragen können.",
+	"type": "shopware-platform-plugin",
+	"version" : "2.8.8",
+	"license" : "GPL-3.0-or-later",
+	"authors" : [{
+			"name" : "SEMKNOX",
+			"email" : "shopware@semknox.com",
+			"homepage" : "https://www.SiteSearch360.com",
+			"role" : "Manufacturer"
+		}
+	],
+  "require": {
+      "php": ">=7.2.0",
+      "shopware/core": ">=6.2",
+      "shopware/storefront": ">=6.2"
+  },	
+	"autoload" : {
+		"psr-4" : {
+			"semknox\\search\\" : "src/"
+		}
+	},
+	"extra" : {
+		"shopware-plugin-class" : "semknox\\search\\semknoxSearch",
+		"copyright" : "(c) semknox",
+		"label" : {
+			"de-DE" : "Such-Controller für SiteSearch360",
+			"en-GB" : "search-controller for SiteSearch360"
+		},
+    "description": {
+        "de-DE": "Erstellt einen Such-Controller zur Nutzung der semantischen Suche von SiteSearch360. Sie benötigen eine API-Key und eine Customer-ID, die Sie während der Installation abfragen können.",
+        "en-GB": "Creating an search-controller to use the semantic search of SiteSearch360. You're in need of an api-key and customer-id, which you can create during onboarding."
+    },
+    "supportLink": {
+        "de-DE": "https://www.sitesearch360.com/de/shopware-plugin/",
+        "en-GB": "https://www.sitesearch360.com/shopware-plugin/"
+    },
+    "manufacturerLink": {
+        "de-DE": "https://www.sitesearch360.com/",
+        "en-GB": "https://www.sitesearch360.com/"
+    }		
+	}
+}

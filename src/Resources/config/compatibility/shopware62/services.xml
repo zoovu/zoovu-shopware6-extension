@@ -1,0 +1,170 @@
+<container xmlns="http://symfony.com/schema/dic/services"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+           
+    <services>
+
+        <service
+                id="semknox\search\Compatibility\Shopware62\Product\SiteSearchProductListingFeaturesSubscriber"
+                decorates="Shopware\Core\Content\Product\SalesChannel\Listing\ProductListingFeaturesSubscriber"
+                public="true"
+        >
+            <tag name="kernel.event_subscriber" />
+            <argument type="service" id="Doctrine\DBAL\Connection"/>
+            <argument type="service" id="property_group_option.repository"/>
+            <argument type="service" id="Shopware\Core\System\SystemConfig\SystemConfigService"/>
+            <argument type="service" id="Shopware\Core\Content\Product\SalesChannel\Listing\ProductListingSortingRegistry"/>
+            <argument type="service" id="event_dispatcher"/>
+            <argument type="service" id="semknox\search\Compatibility\Shopware62\Product\SiteSearchProductListingFeaturesSubscriber.inner"/>
+            <argument type="service" id="translator"/>
+						<argument type="service" id="semknox\search\Framework\SemknoxsearchHelper"/>
+						                        
+        </service>
+ 
+        <service id="semknox\search\Entity\semknoxLogEntityDefinition">
+            <tag name="shopware.entity.definition" entity="semknox_logs" />
+        </service>
+    
+        <service id="semknox\search\Entity\semknoxConfigEntityDefinition">
+            <tag name="shopware.entity.definition" entity="semknox_config" />
+        </service>
+
+        <service id="semknox\search\Framework\DataAbstractionLayer\CriteriaParser">
+            <argument type="service" id="Shopware\Core\Framework\DataAbstractionLayer\Dbal\EntityDefinitionQueryHelper"/>
+        </service>
+                
+        <service id="semknox\search\Framework\SemknoxsearchHelper" public="true">
+            <argument>%kernel.environment%</argument>
+            <argument type="service" id="semknox\search\api\Client"/>
+            <argument type="service" id="logger" />
+             <argument type="service" id="Shopware\Core\System\SystemConfig\SystemConfigDefinition" />
+            <argument type="service" id="semknox\search\Framework\DataAbstractionLayer\CriteriaParser"/>
+            <argument type="service" id="Shopware\Core\Content\Product\ProductDefinition"/>            
+            <argument>%kernel.logs_dir%</argument>
+						<argument type="service" id="request_stack" />
+        </service>
+
+        <service id="semknox\search\api\Client" public="true" >
+            <argument>%kernel.environment%</argument>
+            <argument type="service" id="logger" />
+        </service>
+
+        <service id="semknox\search\api\siteSearchEntitySearcher">
+            <argument type="service" id="semknox\search\api\Client"/>
+            <argument type="service" id="semknox\search\Framework\SemknoxsearchHelper"/>
+        </service>
+        
+
+        
+        <service id="semknox\search\Product\ProductSearchBuilder">
+            <argument type="service" id="semknox\search\Framework\SemknoxsearchHelper"/>
+            <argument type="service" id="Shopware\Core\Content\Product\ProductDefinition"/>
+             <argument type="service" id="Shopware\Core\System\SystemConfig\SystemConfigService" /> 
+            <argument type="service" id="semknox_logs.repository" />
+        </service>        
+                
+        <service id="semknox\search\Compatibility\Shopware62\Product\SemknoxProductListingLoader">
+            <argument type="service" id="sales_channel.product.repository"/>
+            <argument type="service" id="Shopware\Core\System\SystemConfig\SystemConfigService"/>
+            <argument type="service" id="Doctrine\DBAL\Connection"/>
+			<argument type="service" id="Shopware\Core\Content\Product\SalesChannel\Listing\ProductListingLoader"/>
+            <argument type="service" id="semknox\search\api\siteSearchEntitySearcher"/>            
+            <argument type="service" id="Shopware\Core\Content\Product\ProductDefinition"/>
+			
+        </service>
+        
+        <service id="semknox\search\Compatibility\Shopware62\Product\ProductSearchRoute">
+            <argument type="service" id="semknox\search\Product\ProductSearchBuilder"/>
+            <argument type="service" id="event_dispatcher"/>
+            <argument type="service" id="semknox\search\Compatibility\Shopware62\Product\SemknoxProductListingLoader"/>
+            <argument type="service" id="Shopware\Core\Content\Product\ProductDefinition"/>
+            <argument type="service" id="Shopware\Core\Framework\DataAbstractionLayer\Search\RequestCriteriaBuilder"/>
+            <argument type="service" id="semknox_logs.repository" />                        
+            <argument type="service" id="translator"/>
+            <argument type="service" id="semknox\search\Framework\SemknoxsearchHelper"/>            
+        </service>
+
+        <service id="semknox\search\Compatibility\Shopware62\Product\ProductSuggestRoute">
+            <argument type="service" id="semknox\search\Product\ProductSearchBuilder"/>
+            <argument type="service" id="event_dispatcher"/>
+            <argument type="service" id="semknox\search\Compatibility\Shopware62\Product\SemknoxProductListingLoader"/>
+            <argument type="service" id="Shopware\Core\Content\Product\ProductDefinition"/>
+            <argument type="service" id="Shopware\Core\Framework\DataAbstractionLayer\Search\RequestCriteriaBuilder"/>
+            <argument type="service" id="semknox_logs.repository" />                        
+            <argument type="service" id="translator"/>
+            <argument type="service" id="semknox\search\Framework\SemknoxsearchHelper"/>
+            
+        </service>
+
+        <service id="semknox\search\Compatibility\Shopware62\Page\SearchPageLoader" public="true">
+            <argument type="service" id="Shopware\Storefront\Page\GenericPageLoader" />
+            <argument type="service" id="semknox\search\Compatibility\Shopware62\Product\ProductSearchRoute" />
+            <argument type="service" id="event_dispatcher" />
+            <argument type="service" id="translator"/>
+            <argument type="service" id="semknox\search\Framework\SemknoxsearchHelper"/>
+        </service>
+
+        <service id="semknox\search\Compatibility\Shopware62\Page\SuggestPageLoader" public="true">
+            <argument type="service" id="event_dispatcher" />
+            <argument type="service" id="semknox\search\Compatibility\Shopware62\Product\ProductSuggestRoute" />
+            <argument type="service" id="Shopware\Storefront\Page\GenericPageLoader" />
+        </service>
+
+        <service
+            id="semknox\search\Compatibility\Shopware62\Controller\SearchController"
+            decorates="Shopware\Storefront\Controller\SearchController"
+            public="true"
+        >
+            <argument type="service" id="semknox\search\Compatibility\Shopware62\Controller\SearchController.inner"/>        
+            <argument type="service" id="semknox\search\Compatibility\Shopware62\Page\SearchPageLoader" />
+            <argument type="service" id="semknox\search\Compatibility\Shopware62\Page\SuggestPageLoader" />
+            <argument type="service" id="semknox\search\Compatibility\Shopware62\Product\ProductSearchRoute" />
+            <argument type="service" id="semknox\search\Framework\SemknoxsearchHelper"/>
+            
+            <call method="setContainer">
+                <argument type="service" id="service_container" />
+            </call>
+        </service>
+
+                
+                        
+        <service id="semknox\search\Compatibility\Shopware62\Service\semknoxExporter">
+            <argument type="service" id="Shopware\Core\System\SystemConfig\SystemConfigService"/>
+            <argument type="tagged" tag="semknox.search_update_provider"/>
+            <argument type="service" id="cache.system"/>
+            <argument type="service" id="semknox\search\Framework\SemknoxsearchHelper"/>
+            <argument type="service" id="logger" />
+            <argument>%kernel.logs_dir%</argument>
+            <argument type="service" id="event_dispatcher"/>            
+            <argument type="service" id="Shopware\Core\Checkout\Cart\CartRuleLoader"/>
+        </service>
+                        
+        <service id="semknox\search\Provider\ProductDataProvider">
+            <argument type="service" id="sales_channel.product.repository"/>
+            <argument type="service" id="sales_channel.category.repository"/>
+            <argument type="service" id="Shopware\Core\Content\Seo\SeoUrlPlaceholderHandlerInterface"/>             
+            <argument type="service" id="semknox\search\Framework\SemknoxsearchHelper"/>
+            <argument type="service" id="Shopware\Core\Framework\Adapter\Translation\Translator"/>
+            <argument type="service" id="Shopware\Administration\Snippet\SnippetFinder"/>                       
+            <argument type="service" id="router.default"/>
+            <tag name="semknox.search_update_provider"/>
+        </service>
+                
+        <service id="semknox\search\Command\FullUpdateCommand">
+            <argument type="service" id="sales_channel.repository"/>
+            <argument type="service" id="Shopware\Core\System\SalesChannel\Context\SalesChannelContextFactory"/>
+            <argument type="service" id="logger"/>
+            <argument type="service" id="Shopware\Core\System\SystemConfig\SystemConfigService"/>
+            <argument type="service" id="semknox\search\Framework\SemknoxsearchHelper"/>
+            <argument type="service" id="semknox\search\Compatibility\Shopware62\Service\semknoxExporter"/>            														 
+            <argument type="service" id="semknox_logs.repository" />        
+            <tag name="console.command"/>
+        </service>
+
+        <service id="semknox\search\Controller\Routes\CronController" public="true">
+            <argument type="service" id="semknox\search\Framework\SemknoxsearchHelper"/>
+        </service>
+      
+      
+    </services>
+</container>

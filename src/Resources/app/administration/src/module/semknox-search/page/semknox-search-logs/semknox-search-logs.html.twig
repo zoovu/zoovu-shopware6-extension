@@ -1,0 +1,71 @@
+{% block semknox_search_logs %}
+    <sw-page class="semknox-search-logs">
+
+				{% block semknox_search_header %}
+					<template #smart-bar-header>
+						<h2 class="semknox-search-header">
+							{{ $tc('semknox-search.header') }}
+              {% block semknox_search_header_tabs %}
+                    
+                <router-link class="semknox_search_header__tab-config"
+                             :to="pathToConfig">
+                             {{ $tc('semknox-search.general.tabTitleMain') }}
+                </router-link>
+                <router-link class="semknox_search_header__tab-logs"
+                             :to="pathToLogs">
+                             {{ $tc('semknox-search.general.tabTitleLogs') }}
+                </router-link>
+                <router-link class="semknox_search_header__tab-cron"
+                             :to="pathToCron">
+                             {{ $tc('semknox-search.general.tabTitleCron') }}
+                </router-link>
+							{% endblock %}							
+						</h2>
+					</template>
+				{% endblock %}
+
+
+        <template slot="content">
+            {% block semknox_search_logs_content %}
+                <sw-entity-listing
+                    v-if="logs"
+                    :items="logs"
+                    :repository="repository"
+                    :showSelection="false"
+                    :columns="columns">
+
+                        <template slot="column-createdAt" slot-scope="{ item }">
+                            {% block semknox_search_logs_list_column_created_at %}
+                                {{ item.createdAt | date({ hour: '2-digit', minute: '2-digit' }) }}
+                            {% endblock %}
+                        </template>
+                    
+                        <template slot="column-context" slot-scope="{ item }">
+                            {% block semknox_search_logs_list_column_context %}
+                                <a @click="showInfoModal(item)">{{ item.logDescr }}</a>
+                            {% endblock %}
+                        </template>
+
+                        <template slot="actions" slot-scope="{ item }">
+                            {% block semknox_search_logs_list_content_listing_actions %}
+                                <sw-context-menu-item @click="showInfoModal(item)">
+                                    {% block semknox_search_logs_list_content_listing_action_show_label %}
+                                        {{ $tc('semknox-search.logs.actionShowInfo') }}
+                                    {% endblock %}
+                                </sw-context-menu-item>
+                            {% endblock %}
+                        </template>
+                </sw-entity-listing>
+            {% endblock %}
+            
+            {% block semknox_search_logs_list_content_info_modal %}
+                <component v-if="displayedLog !== null"
+                           :is="modalNameFromLogEntry"
+                           :logEntry="displayedLog"
+                           @close="closeInfoModal">
+                </component>
+            {% endblock %}
+            
+        </template>
+    </sw-page>
+{% endblock %}
