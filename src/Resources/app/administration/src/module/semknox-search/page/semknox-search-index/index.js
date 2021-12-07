@@ -339,6 +339,10 @@ Shopware.Component.register('semknox-search-index', {
 					this.semknoxPrefConfigData['semknoxSearch.config.semknoxUpdateCronInterval'] = 24;
 					this.ScLangPrefConfigData['semknoxSearch.config.semknoxUpdateCronInterval'] = 24;
 				}
+				if (!this.semknoxPrefConfigData.hasOwnProperty('semknoxSearch.config.semknoxUpdateUseVariantMaster')) {
+					this.semknoxPrefConfigData['semknoxSearch.config.semknoxUpdateUseVariantMaster'] = false;
+					this.ScLangPrefConfigData['semknoxSearch.config.semknoxUpdateUseVariantMaster'] = false;
+				}
 				
 				this.checkRequiredPrefFields();
 				//this.semknoxConfigData = res;
@@ -377,6 +381,10 @@ Shopware.Component.register('semknox-search-index', {
 				if (!this.semknoxConfigData.hasOwnProperty('semknoxSearch.config.semknoxUpdateBlocksize')) {
 					this.semknoxConfigData['semknoxSearch.config.semknoxUpdateBlocksize'] = 500;
 					this.ScLangConfigData['semknoxSearch.config.semknoxUpdateBlocksize'] = 500;
+				}
+				if (!this.semknoxConfigData.hasOwnProperty('semknoxSearch.config.semknoxUpdateUseVariantMaster')) {
+					this.semknoxConfigData['semknoxSearch.config.semknoxUpdateUseVariantMaster'] = false;
+					this.ScLangConfigData['semknoxSearch.config.semknoxUpdateUseVariantMaster'] = false;
 				}
 				this.checkRequiredFields();
 				//this.semknoxConfigData = res;
@@ -484,6 +492,7 @@ Shopware.Component.register('semknox-search-index', {
 			this.saveSingle('semknoxSearch.config.semknoxActivate');
 			this.saveSingle('semknoxSearch.config.semknoxActivateUpdate');
 			this.saveSingle('semknoxSearch.config.semknoxUpdateBlocksize');
+			this.saveSingle('semknoxSearch.config.semknoxUpdateUseVariantMaster');
 		},
 		
 		onSavePrefs() {
@@ -498,6 +507,7 @@ Shopware.Component.register('semknox-search-index', {
 			this.saveSinglePref('semknoxSearch.config.semknoxUpdateCronTime');
 			this.saveSinglePref('semknoxSearch.config.semknoxUpdateCronInterval');
 			this.saveSinglePref('semknoxSearch.config.semknoxUpdateBlocksize');
+			this.saveSinglePref('semknoxSearch.config.semknoxUpdateUseVariantMaster');
 		},
 		
 		saveSingle(configId) {

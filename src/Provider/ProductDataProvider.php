@@ -20,6 +20,10 @@ use Shopware\Core\Framework\Adapter\Translation\Translator;
 use Shopware\Administration\Snippet\SnippetFinderInterface;
 use Symfony\Component\Routing\RouterInterface;
 use Shopware\Core\Checkout\Cart\Price\Struct\PriceCollection;
+use Shopware\Core\Content\Product\Aggregate\ProductConfiguratorSetting\ProductConfiguratorSettingEntity;
+use Shopware\Core\Content\Property\PropertyGroupCollection;
+use Shopware\Core\Content\Property\Aggregate\PropertyGroupOption\PropertyGroupOptionCollection;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 class ProductDataProvider implements ProductProviderInterface
 {
     public const CHANGE_FREQ = 'hourly';
@@ -76,6 +80,8 @@ class ProductDataProvider implements ProductProviderInterface
      */
     private $transList = [];
     private $maxProducts = 0;
+    private $preferences = [];
+    private EntityRepositoryInterface $configuratorRepository;
     public function __construct(
         SalesChannelRepositoryInterface $productRepository,
         SalesChannelRepositoryInterface $categoryRepository,
@@ -83,7 +89,8 @@ class ProductDataProvider implements ProductProviderInterface
         SemknoxsearchHelper $helper,
         Translator $translator,
         SnippetFinderInterface $snippetFinder,
-		RouterInterface $router
+		RouterInterface $router,
+        EntityRepositoryInterface $configuratorRepository
         ) {
             $this->productRepository = $productRepository;
             $this->categoryRepository = $categoryRepository;
@@ -92,6 +99,7 @@ class ProductDataProvider implements ProductProviderInterface
             $this->translator = $translator;
             $this->snippetFinder = $snippetFinder;
             $this->router = $router;
+            $this->configuratorRepository = $configuratorRepository;
     }
     public function getName(): string
     {
@@ -101,8 +109,13 @@ class ProductDataProvider implements ProductProviderInterface
     {
         try {
             if (is_null($offset)) { $offset = 0; }
+            $this->preferences = $this->semknoxSearchHelper->getPreferences();
             $this->allProdsList=[];
-            $query = "select HEX(id) as id, product_number from product where ( (active > 0) OR ( (isnull(active)) AND (NOT isnull(parent_id)) ) )";
+            if ($this->preferences['semknoxUpdateUseVariantMaster']) {
+                $query = "select HEX(id) as id, product_number from product where ( (active > 0) OR ( (isnull(active)) AND (NOT isnull(parent_id)) ) )";
+            } else {
+                $query = "select HEX(id) as id, product_number from product where ( (active > 0) OR ( (isnull(active)) AND (NOT isnull(parent_id)) ) ) AND (ISNULL(child_count) OR (child_count <=  0))";
+            }
             $scID = $salesChannelContext->getSalesChannel()->getId();
             $doCloseOut = $this->semknoxSearchHelper->getShopwareConfigValue('core.listing.hideCloseoutProductsWhenOutOfStock', $scID,  false);
             if ($doCloseOut) {
@@ -159,7 +172,7 @@ class ProductDataProvider implements ProductProviderInterface
         */
         $np="";
         if (!empty($logPath)) { $np = $logPath.'allprods.json'; }
-        if ( (empty($offset)) && (file_exists($np)) ) { unlink($np); }
+        if ( (empty($offset)) && (file_exists($np)) ) { unlink($np); }      
         if (!file_exists($np)) {
             $this->genAllProdsList($salesChannelContext, $np, $offset, $limit);
         } else {
@@ -224,7 +237,8 @@ class ProductDataProvider implements ProductProviderInterface
                 }
                 $newProduct->setMainProductId($inpProduct->getParentId());                
                 $newProduct->setURL($this->getURL($inpProduct));
-                $newProduct->setProperties($this->getProperties($inpProduct));
+                $variantOptions = $this->loadSettings($inpProduct, $salesChannelContext);
+                $newProduct->setProperties($this->getProperties($inpProduct, $variantOptions));
                 if (isset($this->salesCountList[$id])) { $newProduct->setSalesCount(intval($this->salesCountList[$id]['count'])); }
                 if (isset($this->productReviewList[$id])) { 
                     $newProduct->setVotesCount(intval($this->productReviewList[$id]['count']));
@@ -545,7 +559,7 @@ class ProductDataProvider implements ProductProviderInterface
         }
         return '';
     }
-    private function getProperties(ProductEntity $product) : array
+    private function getProperties(ProductEntity $product, ?array $variantOptions) : array
     {
         $ret=[];
         $tid=$this->curLocale.".snippets.sw-product.settingsForm.labelWidth";  if (isset($this->transList[$tid])) { $ename = ($this->transList[$tid]); } else { $ename = 'width'; }
@@ -556,6 +570,23 @@ class ProductDataProvider implements ProductProviderInterface
         if ($product->getLength()) { $ret['length']=['name'=>$ename, 'values'=>[['id'=>$product->getLength(), 'name'=>$product->getLength().'mm']]]; }
         $tid=$this->curLocale.".snippets.sw-product.settingsForm.labelWeight";  if (isset($this->transList[$tid])) { $ename = ($this->transList[$tid]); } else { $ename = 'weight'; }
         if ($product->getWeight()) { $ret['weight']=['name'=>$ename, 'values'=>[['id'=>$product->getWeight(), 'name'=>$product->getWeight().'kg']]]; }
+        if (is_array($variantOptions)) {
+                $prodOptions = $product->getOptionIds();
+                if (is_array($prodOptions)) {
+                    foreach ($variantOptions as $k => $opt) {
+                        if (in_array($k, $prodOptions)) {
+                            $id = $opt['groupId'];
+                            if (!isset($ret[$id])) {
+                                $ret[$id]=['name'=>$opt['groupName'], 'values'=>[]];
+                            }
+                            $elm=[];
+                            $elm['id'] = $opt['optionId'];
+                            $elm['name'] = $opt['optionName'];
+                            $ret[$id]['values'][]=$elm;
+                        }
+                    }
+                }
+        }
         foreach ($product->getProperties() as $pgOptionEntity)
         {
             $group = $pgOptionEntity->getGroup();
@@ -606,5 +637,55 @@ class ProductDataProvider implements ProductProviderInterface
     private function getProductReviewList() {
         $q = "SELECT LOWER(hex(product_id)) as product_id, Count(*) as `count`, AVG(points) as `avg` FROM `product_review` WHERE status > 0 GROUP BY product_id";
         $this->productReviewList=$this->semknoxSearchHelper->getDBData($q, ['count', 'avg'], 'product_id');
+    }
+    /**
+     * get configurator-elements
+     * @param ProductEntity $product
+     * @param SalesChannelContext $context
+     * @return array|NULL
+     */
+    private function loadSettings(ProductEntity $product, SalesChannelContext $context): ?array
+    {
+        $pId = $product->getParentId();
+        if (is_null($pId)) { return null; }
+        if ( (isset($this->variantOptions[$pId])) && (is_array($this->variantOptions[$pId])) ) {
+            return $this->variantOptions[$pId];
+        }
+        $criteria = (new Criteria())->addFilter(
+            new EqualsFilter('productId', $pId)
+            );
+        $criteria->addAssociation('option.group')
+        ->addAssociation('option.media')
+        ->addAssociation('media');
+        $settings = $this->configuratorRepository
+        ->search($criteria, $context->getContext())
+        ->getEntities();
+        if ($settings->count() <= 0) {
+            return null;
+        }
+        $groups = [];
+        /** @var ProductConfiguratorSettingEntity $setting */
+        foreach ($settings as $setting) {
+            $option = $setting->getOption();
+            if ($option === null) {
+                continue;
+            }
+            $group = $option->getGroup();
+            if ($group === null) {
+                continue;
+            }
+            $groupId = $group->getId();
+            if (isset($groups[$groupId])) {
+                $group = $groups[$groupId];
+            }
+            $groups[$groupId] = $group;
+            if ($group->getOptions() === null) {
+                $group->setOptions(new PropertyGroupOptionCollection());
+            }
+            $group->getOptions()->add($option);
+            $option->setConfiguratorSetting($setting);
+            $this->variantOptions[$pId][$option->getId()] = ['optionId' => $option->getId(), 'optionName' => $option->getName(), 'groupId' => $groupId, 'groupName' => $group->getName()];
+        }
+        return $this->variantOptions[$pId];
     }
 }

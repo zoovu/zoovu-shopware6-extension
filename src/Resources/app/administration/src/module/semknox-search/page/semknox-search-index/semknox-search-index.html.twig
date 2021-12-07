@@ -251,7 +251,23 @@
 											              	                           :min=20
 											              	                           :max=100000
 											              	                           @change="props.updateCurrentValue">
-											              	            </sw-text-field>
+											              	            </sw-number-field>
+											              	        </template>
+											              	    </sw-inherit-wrapper>
+											              	{% endblock %}
+								                  
+											              	{% block semknox_search_content_card_channel_config_preferences_card_container_settings_update_variantmaster %}
+											              	    <sw-inherit-wrapper v-model="ScLangPrefConfigData['semknoxSearch.config.semknoxUpdateUseVariantMaster']"
+											              	                        :customInheritationCheckFunction="checkTextFieldInheritance">
+											              	        <template #content="props">
+											              	            <sw-checkbox-field name="semknoxSearch.config.semknoxUpdateUseVariantMaster"
+											              	                           :mapInheritance="props"
+											              	                           :label="$tc('semknox-search.settingForm.credentials.updateVariantMaster.label')"
+											              	                           :helpText="$tc('semknox-search.settingForm.credentials.updateVariantMaster.tooltipText')"
+											              	                           :disabled="props.isInherited || !aclAllowed('semknox_search.editor')"
+											              	                           :value="props.currentValue"
+											              	                           @change="props.updateCurrentValue">
+											              	            </sw-checkbox-field>
 											              	        </template>
 											              	    </sw-inherit-wrapper>
 											              	{% endblock %}

@@ -282,7 +282,7 @@ class semknoxExporter implements semknoxExporterInterface
         $api->addHeaderInfoData($this->semknoxSearchHelper->getHeaderInfoData());
         $this->semknoxSearchHelper->logData(1, 'Semknox: update cancel/reset');
         $ret=-21;
-        $logt=$res['status'];if (isset($res['resultText'])) { $logt.='##'.$res['resultText']; }
+        $res=['status'=>-1, 'resultText'=>'reset last update'];
         $this->semknoxSearchHelper->logData(10, 'update.send.p3', ['updateSendData'=>$res]);
         if ($res['status'] < 0) { $ret=-22; return $ret; } else { $ret = 1; }
         return $ret;

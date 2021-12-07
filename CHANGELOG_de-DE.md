@@ -1,3 +1,7 @@
+2.9.1
+- added config-param to send master-product of variants or not
+- added variant-option to features on upload 
+
 #2.8.8
 - extended logging on export
 - removed start-signal on cancelling the update-procedure
