@@ -103,6 +103,10 @@
                 	"label" : "Count of products per update-datablock",
                 	"tooltipText": "The number of products per datablock in the update-procedure."
                 },
+                "updateVariantMaster": {
+                	"label" : "send master-product of variants to search",
+                	"tooltipText": "if you want to be able to list master-products of variants in your listing, set this to true"
+                },
                 "button": {
                     "title": "Get API-credentials",
                     "titleAlt": "",

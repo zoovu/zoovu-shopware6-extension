@@ -103,6 +103,10 @@
                 	"label" : "Anzahl der Produkte pro Datenblock im Update",
                 	"tooltipText": "Die Anzahl der gleichzeitig zu verarbeitenden Produkte pro Datenblock."
                 },
+                "updateVariantMaster": {
+                	"label" : "Sende das Master-Product einer Variante zu SiteSearch360",
+                	"tooltipText": "Wenn Sie das Master-Produkt einer Variante im Listing ausgeben wollen, setzen Sie diesen Haken, sonst nicht."
+                },
                 "button": {
                     "title": "API-Zugangsdaten holen",
                     "titleAlt": "",

@@ -280,7 +280,7 @@ class SemknoxsearchHelper
      * @return array
      */
     public function getPreferences() : array {
-        $ret=['semknoxUpdateCronTime' => 0, 'semknoxUpdateCronInterval' => 24, 'semknoxUpdateBlocksize' => 500];
+        $ret=['semknoxUpdateCronTime' => 0, 'semknoxUpdateCronInterval' => 24, 'semknoxUpdateBlocksize' => 500, 'semknoxUpdateUseVariantMaster' => false];
         $h = $this->getMainConfigParams('00000000000000000000000000000000', '00000000000000000000000000000000');
         if ( (isset ($h['semknoxUpdateCronTime'])) && 
                   ($h['semknoxUpdateCronTime']>-1) &&
@@ -296,6 +296,9 @@ class SemknoxsearchHelper
                 ($h['semknoxUpdateBlocksize'] > 20) &&
                 ($h['semknoxUpdateBlocksize'] < 200000) ) {
                     $ret['semknoxUpdateBlocksize'] = intval($h['semknoxUpdateBlocksize']);
+        }
+        if (isset ($h['semknoxUpdateUseVariantMaster'])) {
+            $ret['semknoxUpdateUseVariantMaster'] = $h['semknoxUpdateUseVariantMaster'];
         }
         $ret['semknoxUpdateCronTimeList']=[];
         $i=$ret['semknoxUpdateCronTime'];

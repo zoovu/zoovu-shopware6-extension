@@ -148,6 +148,7 @@
             <argument type="service" id="Shopware\Core\Framework\Adapter\Translation\Translator"/>
             <argument type="service" id="Shopware\Administration\Snippet\SnippetFinder"/>                       
             <argument type="service" id="router.default"/>
+            <argument type="service" id="product_configurator_setting.repository"/>
             <tag name="semknox.search_update_provider"/>
         </service>
                 
