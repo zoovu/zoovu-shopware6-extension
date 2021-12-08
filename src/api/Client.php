@@ -3,6 +3,7 @@ declare(strict_types = 1);
 namespace semknox\search\api;
 use Psr\Log\LoggerInterface;
 use semknox\search\Exception\ApiConnectException;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 /**
  * Class Client
  *
@@ -29,16 +30,22 @@ class Client
     private $api;
     private $headerInfoData = ['shopsys'=>'SHOPWARE', 'shopsysver'=>'', 'extver'=>'', 'clientip'=>'', 'sessionid'=>''];  /** information which should be send by header like shopware-version etc. */
     /**
+     * @var EventDispatcherInterface
+     */
+    private $eventDispatcher;
+    /**
      * Client constructor
      *
      */    
     public function __construct(
         string $environment,
-        LoggerInterface $logger
+        LoggerInterface $logger,
+        EventDispatcherInterface $eventDispatcher
      )
     {
         $this->environment = $environment;
         $this->logger = $logger;
+        $this->eventDispatcher = $eventDispatcher;
     }
     public function init(array $options) : void
     {
@@ -74,6 +81,7 @@ class Client
         if (!$this->checkConfigData()) {return $ret; }
         try {
             $this->api = new semknoxBaseApi($this->baseUrl, $this->customerId,$this->apiKey, $this->session);
+            $this->api->eventDispatcher = $this->eventDispatcher;
             $this->api->addHeaderInfoData($this->headerInfoData);
             $ret = $this->api->QuerySearchResultsByBody($body);
             unset($this->api);
@@ -95,6 +103,7 @@ class Client
         if (!$this->checkConfigData()) {return $ret; }
         try {
             $this->api = new semknoxBaseApi($this->baseUrl, $this->customerId,$this->apiKey, $this->session);
+            $this->api->eventDispatcher = $this->eventDispatcher;
             $this->api->addHeaderInfoData($this->headerInfoData);
             $ret = $this->api->getSuggests($body);
             unset($this->api);
