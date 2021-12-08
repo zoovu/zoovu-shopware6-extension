@@ -32,9 +32,9 @@ class SemknoxUpdateDataCallbackEvent extends Event
      * 
      * @return bool
      */
-    public function getChanged() : bool
+    public function isChanged() : bool
     {
-        return $this->changed;
+        return ($this->changed > 0) ? true : false;
     }
     /**
      * checks the current stored json-value

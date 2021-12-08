@@ -82,6 +82,10 @@ use semknox\search\Struct\ProductResult;
 		public $groupedResultsAvailable=0; /** max available grouped results in resultset. */
 		public $headResultsAvailable=0;	 /** max available head results in resultset. */
 		public $groupedHeadResultsAvailable=0; /** max grouped-head-results in resultset. */
+		/**
+		 * @var EventDispatcherInterface
+		 */
+		public $eventDispatcher = null;
 		private $headerInfoData = ['shopsys'=>'SHOPWARE', 'shopsysver'=>'', 'extver'=>'', 'clientip'=>'', 'sessionid'=>''];  /** information which should be send by header like shopware-version etc. */
 		/**
 		*	construktor-method. creates curl-object and takes params.
@@ -294,9 +298,15 @@ use semknox\search\Struct\ProductResult;
 		    if ( (trim($params['sort'])=='') || ($params['sort']=='score') || ($params['sort']=='_score') ) {
 		        unset($params['sort']);
 		    }
-            $params['userGroup'] = $body->getUserGroup();
 		    $params['projectId'] = $this->customerID;
 		    $q = $this->base."search?";
+		    if ($this->eventDispatcher != null) {
+		        $callBackEvent = new SemknoxCallParamsCallbackEvent($params, 'search');
+    		    $this->eventDispatcher->dispatch($callBackEvent, $callBackEvent::NAME);		    
+    		    if ( ($callBackEvent->isChanged()) && ($callBackEvent->checkParams() > 0) ) { 
+    		        $params = $callBackEvent->getParams();
+    		    }
+		    }
 		    $ret = $this->call($q, self::METHODE_GET, $params, $data);
 		    if ($ret['status'] < 0) {
 		      $body->setError($ret);
@@ -311,6 +321,13 @@ use semknox\search\Struct\ProductResult;
 		    $params['userGroup'] = $body->getUserGroup();
 		    $params['projectId'] = $this->customerID;
 		    $q = $this->base."search/suggestions?";
+		    if ($this->eventDispatcher != null) {
+		        $callBackEvent = new SemknoxCallParamsCallbackEvent($params, 'suggest');
+		        $this->eventDispatcher->dispatch($callBackEvent, $callBackEvent::NAME);
+		        if ( ($callBackEvent->isChanged()) && ($callBackEvent->checkParams() > 0) ) {
+		            $params = $callBackEvent->getParams();
+		        }
+		    }
 		    $ret = $this->call($q, self::METHODE_GET, $params, $data);
 		    if ($ret['status'] < 0) {
 		        $body->setError($ret);

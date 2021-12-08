@@ -1,4 +1,8 @@
-2.9.1
+#2.9.2
+- added Callback on search/suggest-calls 
+- fixed compatibility for shopware 6.3/6.2
+
+#2.9.1
 - added config-param to send master-product of variants or not
 - added variant-option to features on upload 
 
