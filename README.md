@@ -1,12 +1,14 @@
-Site Search 360 Shopware 6 Extension
+## Site Search 360 Shopware 6 Extension
 
 
+***
 Callbacks:
 
-   public static function getSubscribedEvents(): array
+
+
+    public static function getSubscribedEvents(): array
     {
-        // Return the events to listen to as array like this:  <event to
-listen to> => <method to execute>
+        // Return the events to listen to as array like this:  <event to listen to> => <method to execute>
         return [
             'semknox.update.data.callback' => 'onUploadJson',
             'semknox.call.params.callback' => 'onCallParams'
