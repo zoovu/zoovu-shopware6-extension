@@ -535,8 +535,8 @@ class SemknoxsearchHelper
     private function getBaseURLByID($id) {
         $ret="stage-shopware.semknox.com/";
         switch ($id) {
-            case 0  : $ret="https://stage-shopware-v3.semknox.com/"; break;
-            case 1  : $ret="https://api-shopware-v3.semknox.com/"; break;
+            case 0  : 
+            case 1  : $ret="https://api-shopware.sitesearch360.com/"; break;
         }
         return $ret;
     }    
@@ -799,6 +799,17 @@ class SemknoxsearchHelper
         }
         return $ret;            
     }
+    public function getDomainURLFromSCContext(SalesChannelContext $context) : string
+    {
+        $ret='';
+        if (method_exists($context, 'getSalesChannel')) {
+        	$sc=$context->getSalesChannel();
+	        if (method_exists($sc, 'getDomains')) {
+	        	$ret = $sc->getDomains()->first()->getUrl();
+	        }
+      	}
+      	return $ret;
+		}    
     /**
      * returns languageID from context
      * @param SalesChannelContext $context
