@@ -1,0 +1,19 @@
+{% sw_extends '@Storefront/storefront/layout/header/search.html.twig' %}
+
+
+{% set jaAutosuggestPluginOptions = {
+    active: page.header.extensions.semknoxConfig.active ,
+    activateAutosuggest : page.header.extensions.semknoxConfig.activateAutosuggest ,
+    projectId: page.header.extensions.semknoxConfig.projectId ,
+    apiUrl: page.header.extensions.semknoxConfig.apiUrl ,
+    dataPoints: page.header.extensions.semknoxConfig.dataPoints ,
+    currentStoreUrl: page.header.extensions.semknoxConfig.currentStoreUrl ,
+    addParams: page.header.extensions.semknoxConfig.addParams ,
+} %}
+
+{% block layout_header_search %}
+
+    {{ parent() }}
+
+    <template data-js-autosuggest-plugin data-js-autosuggest-plugin-options='{{ jaAutosuggestPluginOptions|json_encode }}'></template>
+{% endblock %}

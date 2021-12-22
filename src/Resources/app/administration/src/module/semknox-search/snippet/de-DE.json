@@ -99,6 +99,10 @@
                     "label": "SiteSearch360-Update aktivieren",
                     "tooltipText": "Aktiviere diese Option, um den Upload der Daten zur SiteSearch360-Api zu aktivieren."
                 },
+                "enableAutosuggest": {
+                    "label": "SiteSearch360-Autosuggest aktivieren",
+                    "tooltipText": "Aktiviere diese Option, wenn Du im Frontend statt des Shopware-Flyouts das Flyout von SiteSearch360 nutzen möchtest."
+                },
                 "updateBlocksize": {
                 	"label" : "Anzahl der Produkte pro Datenblock im Update",
                 	"tooltipText": "Die Anzahl der gleichzeitig zu verarbeitenden Produkte pro Datenblock."

@@ -1,3 +1,8 @@
+#2.9.3
+- changed API-endpoint to api-shopware.sitesearch360.com
+- added Autosuggest-JS-Function from siteSearch360 via config-param
+- fix to add noindex, follow to search-result-page
+
 #2.9.2
 - added Callback on search/suggest-calls 
 - fixed compatibility for shopware 6.3/6.2

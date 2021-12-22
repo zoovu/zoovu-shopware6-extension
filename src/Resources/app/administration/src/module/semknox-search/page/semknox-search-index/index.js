@@ -491,6 +491,7 @@ Shopware.Component.register('semknox-search-index', {
 			this.saveSingle('semknoxSearch.config.semknoxC01ApiKey');
 			this.saveSingle('semknoxSearch.config.semknoxActivate');
 			this.saveSingle('semknoxSearch.config.semknoxActivateUpdate');
+			this.saveSingle('semknoxSearch.config.semknoxActivateAutosuggest');
 			this.saveSingle('semknoxSearch.config.semknoxUpdateBlocksize');
 			this.saveSingle('semknoxSearch.config.semknoxUpdateUseVariantMaster');
 		},
