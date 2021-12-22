@@ -77,6 +77,9 @@ class SearchPageLoader extends ShopwareSearchPageLoader
         }
         $page = $this->genericLoader->load($request, $salesChannelContext);
         $page = SearchPage::createFrom($page);
+        if ($page->getMetaInformation()) {
+            $page->getMetaInformation()->setRobots('noindex,follow');
+        }
         $this->productSearchRoute->setCriteria($criteria);
         $result = $this->productSearchRoute
             ->load($request, $salesChannelContext)
@@ -227,6 +230,9 @@ class SearchPageLoader extends ShopwareSearchPageLoader
     {
         $page = $this->genericLoader->load($request, $salesChannelContext);
         $page = SearchPage::createFrom($page);
+        if ($page->getMetaInformation()) {
+            $page->getMetaInformation()->setRobots('noindex,follow');
+        }
         $result = $this->productSearchRoute->load($request, $salesChannelContext);
         $listing = $result->getListingResult();
         $page->setListing($listing);

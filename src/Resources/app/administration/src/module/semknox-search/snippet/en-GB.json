@@ -99,6 +99,10 @@
                     "label": "Activate SiteSearch360-update",
                     "tooltipText": "Activate this option to start uploading data to the SiteSearch360-API"
                 },
+                "enableAutosuggest": {
+                    "label": "Activate SiteSearch360-Autosuggest in Frontend",
+                    "tooltipText": "Activate this option to use the SiteSearch360-Autosuggesttool, not the Shopware-flyout"
+                },
                 "updateBlocksize": {
                 	"label" : "Count of products per update-datablock",
                 	"tooltipText": "The number of products per datablock in the update-procedure."
