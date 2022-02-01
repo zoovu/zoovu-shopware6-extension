@@ -111,6 +111,10 @@
                 	"label" : "Sende das Master-Product einer Variante zu SiteSearch360",
                 	"tooltipText": "Wenn Sie das Master-Produkt einer Variante im Listing ausgeben wollen, setzen Sie diesen Haken, sonst nicht."
                 },
+                "semknoxActivateCategoryListing": {
+                	"label" : "Nutze SiteSearch360 für das Kategorie-Listing",
+                	"tooltipText": "Aktiviere diese Option, um die Daten für die Kategorie-Listings ebenfalls durch SiteSearch360 zu generieren."
+                },
                 "button": {
                     "title": "API-Zugangsdaten holen",
                     "titleAlt": "",

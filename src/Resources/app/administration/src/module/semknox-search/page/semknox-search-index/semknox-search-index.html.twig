@@ -186,6 +186,22 @@
 											              	    </sw-inherit-wrapper>
 											              	{% endblock %}
                                     	
+											              	{% block semknox_search_content_card_channel_config_credentials_card_container_settings_activate_category_listing %}
+											              	    <sw-inherit-wrapper v-model="ScLangConfigData['semknoxSearch.config.semknoxActivateCategoryListing']"
+											              	                        :customInheritationCheckFunction="checkTextFieldInheritance">
+											              	        <template #content="props">
+											              	            <sw-switch-field name="semknoxSearch.config.semknoxActivateCategoryListing"
+											              	                           :mapInheritance="props"
+											              	                           :label="$tc('semknox-search.settingForm.credentials.semknoxActivateCategoryListing.label')"
+											              	                           :helpText="$tc('semknox-search.settingForm.credentials.semknoxActivateCategoryListing.tooltipText')"
+											              	                           :disabled="props.isInherited || !aclAllowed('semknox_search.editor')"
+											              	                           :value="props.currentValue"
+											              	                           @change="props.updateCurrentValue">
+											              	            </sw-switch-field>
+											              	        </template>
+											              	    </sw-inherit-wrapper>
+											              	{% endblock %}
+								                  
 
 								                    </div>
 
@@ -288,7 +304,6 @@
 											              	    </sw-inherit-wrapper>
 											              	{% endblock %}
 								                  
-
 
 
 								                    </div>

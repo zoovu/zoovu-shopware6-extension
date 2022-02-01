@@ -83,7 +83,8 @@ class SemknoxsearchHelper
      */
     private $requestStack;
     private $searchEnabled = true;
-    private $supportedControllers = array('Shopware\Storefront\Controller\SearchController::search', 'Shopware\Storefront\Controller\SearchController::pagelet', 'Shopware\Storefront\Controller\SearchController::suggest', 'Shopware\Storefront\Controller\SearchController::ajax', 'Shopware\Storefront\Controller\SearchController::filter');
+    private $supportedControllers = array('Shopware\Storefront\Controller\SearchController::search', 'Shopware\Storefront\Controller\SearchController::pagelet', 'Shopware\Storefront\Controller\SearchController::suggest', 'Shopware\Storefront\Controller\SearchController::ajax', 'Shopware\Storefront\Controller\SearchController::filter', 'siteSearchCMSController');
+    private $supportedControllersInListing = array('Shopware\Storefront\Controller\NavigationController::index', 'Shopware\Storefront\Controller\CmsController::category');
     private $langTrans = []; 
     private $langTransX = []; 
     private $mainConfigVars = null; 
@@ -102,7 +103,8 @@ class SemknoxsearchHelper
         CriteriaParser $parser,
         ProductDefinition $pd,
         string $rootDir,
-        RequestStack $requestStack
+        RequestStack $requestStack,
+        SystemConfigService $systemConfigService
     ) {
         $this->requestStack = $requestStack;
         $this->client = $client;
@@ -112,6 +114,7 @@ class SemknoxsearchHelper
         $this->productDefinition = $pd;
         $this->rootDir = $rootDir;
         $this->logDir = $this->add_ending_slash($rootDir).'semknox';
+        $this->systemConfigService = $systemConfigService;
         $this->getConnection();
         $this->getSemknoxDBConfig();
         $this->getShopwareConfig();
@@ -364,6 +367,18 @@ class SemknoxsearchHelper
         }
         return true;
     }
+    public function useSiteSearchInListing(SalesChannelContext $context, Request $request, ?EntityDefinition $definition=null) {
+        $this->setSessionID($request);
+        $scID=$this->getSalesChannelFromSCContext($context);
+        $domainID = $this->getDomainFromSCContext($context);
+        $contr=$request->attributes->get('_controller');
+        if (is_null($definition)) { $definition = $this->productDefinition; }
+        $mainConfig=$this->allowCatListing($definition, $context->getContext(), $scID, $domainID, $contr);
+        if ($mainConfig===null) {
+            return false;
+        }
+        return true;
+    }
     /**
      * Validates if it is allowed do execute the search request over semknoxsearch
      * used in ProductSearchbuilder und SemknoxsearchEntityServer
@@ -386,6 +401,27 @@ class SemknoxsearchHelper
         }
         return $ret;
         return $this->logOrThrowException(new NoIndexedDocumentsException($definition->getEntityName()));
+    }
+    /**
+     * Validates if it is allowed do execute the cat-listing request over sitesearch360
+     */
+    public function allowCatListing(EntityDefinition $definition, Context $context, string $salesChannelID='', string $domainID='', string $controller=''): ?array
+    {
+        $ret = null;
+        if (!$this->searchEnabled) {
+            return $ret;
+        }
+        $ret = $this->getMainConfigParams($salesChannelID, $domainID);
+        if (is_null($ret)) {
+            return $ret;
+        }
+        if ( (!$ret['valid']) || (!$ret['semknoxActivate']) || (!$ret['semknoxActivateCategoryListing']) ) {
+            $ret=null;
+        }
+        if (!$this->isSupportedInListing($definition, $controller)) {
+            $ret=null;
+        }
+        return $ret;
     }
     public function handleIds(EntityDefinition $definition, Criteria $criteria, Searchbody $search, Context $context): void
     {
@@ -503,6 +539,15 @@ class SemknoxsearchHelper
     public function isSupported(EntityDefinition $definition, string $controller): bool
     {                        
         foreach ($this->supportedControllers as $k) {
+            if ($k === $controller) {
+                return true;
+            }
+        }
+        return false;
+    }
+    public function isSupportedInListing(EntityDefinition $definition, string $controller): bool
+    {
+        foreach ($this->supportedControllersInListing as $k) {
             if ($k === $controller) {
                 return true;
             }
@@ -684,12 +729,15 @@ class SemknoxsearchHelper
                 if (trim($lange['semknoxCustomerId'])=='') { $valid=false; }
                 if (trim($lange['semknoxApiKey'])=='') { $valid=false; }
                 if (empty($lange['semknoxUpdateBlocksize'])) { $lange['semknoxUpdateBlocksize']=500; }
+                if (empty($lange['semknoxActivateCategoryListing'])) { $lange['semknoxActivateCategoryListing']=false; }
+                if (empty($lange['semknoxActivateAutosuggest'])) { $lange['semknoxActivateAutosuggest']=false; }
                 $lange['semknoxUpdateBlocksize'] = intval($lange['semknoxUpdateBlocksize']);
                 if ($valid) {
                     $lange['valid'] = true;
                 } else {
                     $lange['semknoxActivate'] = false;
                     $lange['semknoxActivateUpdate'] = false;
+                    $lange['semknoxActivateCategoryListing'] = false;
                 }
                 unset($lange);
             }
@@ -711,6 +759,7 @@ class SemknoxsearchHelper
         } else {
             $config['semknoxActivate'] = false;
             $config['semknoxActivateUpdate'] = false;
+            $config['semknoxActivateCategoryListing'] = false;
         }
     }
     /**
@@ -1060,5 +1109,23 @@ class SemknoxsearchHelper
             }
         }
         return $ret;
+    }
+    public function getLimit(Request $request, SalesChannelContext $context): int
+    {
+        $limit = $request->query->getInt('limit', 0);
+        if ($request->isMethod(Request::METHOD_POST)) {
+            $limit = $request->request->getInt('limit', $limit);
+        }
+        $limit = 0;
+        $limit = $limit > 0 ? $limit : $this->systemConfigService->getInt('core.listing.productsPerPage', $context->getSalesChannel()->getId());
+        return $limit <= 0 ? 24 : $limit;
+    }
+    public function getPage(Request $request): int
+    {
+        $page = $request->query->getInt('p', 1);
+        if ($request->isMethod(Request::METHOD_POST)) {
+            $page = $request->request->getInt('p', $page);
+        }
+        return $page <= 0 ? 1 : $page;
     }
 }

@@ -7,10 +7,13 @@ use Shopware\Core\Content\Product\Events\ProductListingCriteriaEvent;
 use Shopware\Core\Content\Product\Events\ProductListingResultEvent;
 use Shopware\Core\Content\Product\Events\ProductSearchCriteriaEvent;
 use Shopware\Core\Content\Product\Events\ProductSearchResultEvent;
+use Shopware\Core\Content\Product\SalesChannel\Listing\FilterCollection;
 use Shopware\Core\Content\Product\SalesChannel\Listing\ProductListingFeaturesSubscriber;
+use Shopware\Core\Content\Product\SalesChannel\Listing\ProductListingResult;
 use Shopware\Core\Content\Product\SalesChannel\Sorting\ProductSortingEntity;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\Event\ShopwareEvent;
+use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
 use Shopware\Storefront\Page\GenericPageLoader;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -27,11 +30,18 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\Struct\ArrayEntity;
 use semknox\search\Framework\SemknoxsearchHelper;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityCollection;
+use Shopware\Core\Content\Property\Aggregate\PropertyGroupOption\PropertyGroupOptionCollection;
+use Shopware\Core\Content\Property\Aggregate\PropertyGroupOption\PropertyGroupOptionEntity;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\AggregationResult\Metric\StatsResult;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\AggregationResult\Metric\EntityResult;
+use Shopware\Core\Content\Property\PropertyGroupEntity;
+use Shopware\Core\Content\Property\PropertyGroupCollection;
 class SiteSearchProductListingFeaturesSubscriber extends ProductListingFeaturesSubscriber
 {
     /** @var string default sort for categories */
     public const DEFAULT_SORT = 'score';
     public const DEFAULT_SEARCH_SORT = 'score';
+    private $filterableType = ['COLLECTION', 'BUCKET', 'COLOR'];
     /**
      * @var EntityRepositoryInterface
      */
@@ -58,6 +68,7 @@ class SiteSearchProductListingFeaturesSubscriber extends ProductListingFeaturesS
      */
     private $decorated;
     private $origSearchEvent=null;
+    private $origListingEvent=null;
     /**
      * @var TranslatorInterface
      */
@@ -92,6 +103,59 @@ class SiteSearchProductListingFeaturesSubscriber extends ProductListingFeaturesS
                 $systemConfigService,
                 $dispatcher
                 );
+    }
+    public function handleListingRequest(?ProductListingCriteriaEvent $event): void
+    {
+        if ( ($event===null) || (get_class($event)!=='Shopware\Core\Content\Product\Events\ProductListingCriteriaEvent') ) {
+            $this->decorated->handleListingRequest($event);
+            return;
+        }
+        $this->origListingEvent = $event;
+        $request = $event->getRequest();
+        $criteria = $event->getCriteria();
+        $context = $event->getSalesChannelContext();
+        $salesChannelID='';$controller='';$langID='';
+        if ($criteria->hasExtension('semknoxData')) {
+            $semkData = $criteria->getExtension('semknoxData');
+            $salesChannelID=$semkData->get('salesChannelID');
+            $langID = $semkData->get('languageID');
+            $domainID = $semkData->get('domainID');
+            $controller=$semkData->get('controller');
+        }
+        if (trim($controller)=='') {
+            $this->decorated->handleListingRequest($event);
+            return;            
+        }
+        if ($this->semknoxSearchHelper->useSiteSearchInListing($context, $request) === false) {
+            $this->decorated->handleListingRequest($event);
+            return;
+        }
+        $internal = $request->get('useinternal');
+        if ( (!is_null($internal)) && ($internal == 525) ) {
+            $this->decorated->handleListingRequest($event);
+            return;
+        }
+        $limit = $event->getCriteria()->getLimit();
+        $key = $request->get('order');
+        if ($key=='topseller') {
+            $criteria->resetSorting();
+            unset($key);
+        }
+        if (is_null($key)) {
+            $this->addQueryToRequest($request, '&order=score');
+            $event = new ProductListingCriteriaEvent($request, $criteria, $context);
+        }
+        $criteria = $event->getCriteria();
+        $request = $event->getRequest();
+        $context = $event->getSalesChannelContext();
+        $limit = $limit ?? $event->getCriteria()->getLimit();
+        if ($this->siteSearch_allowRequest($event)) {
+            $event=$this->addSortingFromListingRequest($event, 1);
+            $event=$this->addFilterFromRequest($event);
+            $this->decorated->handleListingRequest($event);
+        } else {
+            $this->decorated->handleListingRequest($event);
+        }
     }
     public function handleSearchRequest(?ProductSearchCriteriaEvent $event): void
     {
@@ -156,12 +220,7 @@ class SiteSearchProductListingFeaturesSubscriber extends ProductListingFeaturesS
         }
         return $ret;
     }
-    public function handleResult(?ProductListingResultEvent $event): void
-    {
-        if ( ($event===null) || (get_class($event)!=='Shopware\Core\Content\Product\Events\ProductSearchResultEvent') ) {
-            $this->decorated->handleResult($event);
-            return;
-        }
+    private function sitesearchHandleSearchResult(?ProductListingResultEvent $event): void{
         $ext=$event->getResult()->getExtension('semknoxResultData');
         if ($ext) {
             $semknoxData = $ext->getVars();
@@ -182,12 +241,51 @@ class SiteSearchProductListingFeaturesSubscriber extends ProductListingFeaturesS
         $result = $event->getResult();
         $redir = $this->getRedirect($result);
         $useInternal = $this->getUseShopwareSearch($result);
-        if ( ($redir!='') || ($useInternal > 0) ) {            
+        if ( ($redir!='') || ($useInternal > 0) ) {
             return;
         }
         $sortings = $result->getCriteria()->getExtension('sortings');
-         $event = $this->addSortingFromSiteSearch($event);
+        $event = $this->addSortingFromSiteSearch($event);
         parent::handleResult($event);
+    }
+    private function sitesearchHandleListingResult(?ProductListingResultEvent $event): void{
+        $ext=$event->getResult()->getExtension('semknoxResultData');
+        if ($ext) {
+            $semknoxData = $ext->getVars();
+            if ( (!isset($semknoxData['data'])) || (!is_array($semknoxData['data'])) || (!isset($semknoxData['data']['metaData'])) ||  (!is_array($semknoxData['data']['metaData'])) ) {
+                if ($this->origSearchEvent) {
+                    $this->decorated->handleSearchRequest($this->origSearchEvent);
+                }
+                $this->decorated->handleResult($event);
+                return;
+            }
+        } else {
+            if ($this->origSearchEvent) {
+                $this->decorated->handleSearchRequest($this->origSearchEvent);
+            }
+            $this->decorated->handleResult($event);
+            return;
+        }
+        $result = $event->getResult();
+        $redir = $this->getRedirect($result);
+        if ( ($redir!='') ) {
+            return;
+        }
+        $this->addCurrentListingFilters($event);
+        $result->setPage($this->getPage($event->getRequest()));
+        $result->setLimit($this->getLimit($event->getRequest(), $event->getSalesChannelContext()));
+        $event = $this->addSortingFromSiteSearch($event);
+    }
+    public function handleResult(?ProductListingResultEvent $event): void {
+        if ( ($event!==null) && (get_class($event)==='Shopware\Core\Content\Product\Events\ProductSearchResultEvent') ) {
+            $this->sitesearchHandleSearchResult($event);
+            return;
+        }
+        if ( ($event!==null) && (get_class($event)==='Shopware\Core\Content\Product\Events\ProductListingResultEvent') ) {
+            $this->sitesearchHandleListingResult($event);
+            return;
+        }
+        $this->decorated->handleResult($event);
     }
     /**
      * check whether the request should be handled by SiteSearch360
@@ -229,6 +327,22 @@ class SiteSearchProductListingFeaturesSubscriber extends ProductListingFeaturesS
         }
         return $default;
     }
+    public function removeScoreSorting(ProductListingResultEvent $event): void
+    {
+        $ext=$event->getResult()->getExtension('semknoxResultData');
+        if ($ext) {
+            $semknoxData = $ext->getVars();
+            if ( (isset($semknoxData['data'])) && (is_array($semknoxData['data'])) ) {
+                return;
+            }
+        }
+        $sortings = $event->getResult()->getAvailableSortings();
+        $defaultSorting = $sortings->getByKey(self::DEFAULT_SEARCH_SORT);
+        if ($defaultSorting !== null) {
+            $sortings->remove($defaultSorting->getId());
+        }
+        $event->getResult()->setAvailableSortings($sortings);
+    }        
     private function siteSearch_removeScoreSorting(ProductListingResultEvent $event): void
     {
         $sortings = $event->getResult()->getAvailableSortings();
@@ -247,6 +361,9 @@ class SiteSearchProductListingFeaturesSubscriber extends ProductListingFeaturesS
     private function addSortingFromRequest(ProductSearchCriteriaEvent $event) : ProductSearchCriteriaEvent
     {
         return $event;
+    }
+    private function addSortingFromListingRequest(ProductListingCriteriaEvent $event) : ProductListingCriteriaEvent
+    {
         $criteria = $event->getCriteria();
         $request = $event->getRequest();
         $context = $event->getSalesChannelContext();
@@ -388,6 +505,8 @@ class SiteSearchProductListingFeaturesSubscriber extends ProductListingFeaturesS
             ...$currentSorting->createDalSorting()
             );
         $criteria->addExtension('sortings', $sortings);
+        $result->setSorting($currentSorting->getKey());
+        $result->setAvailableSortings($sortings);
         $this->changeQueryInRequest($request, ['order' => $currentSorting->getKey()]);
         $event = new ProductListingResultEvent($request, $result, $context);
         /*
@@ -471,5 +590,181 @@ class SiteSearchProductListingFeaturesSubscriber extends ProductListingFeaturesS
             ]));
         $event = new ProductSearchCriteriaEvent($request, $criteria, $context);
         return $event;
+    }
+    private function addFilterFromListingRequest(ProductListingCriteriaEvent $event) : ProductListingCriteriaEvent
+    {
+        $criteria = $event->getCriteria();
+        $request = $event->getRequest();
+        $context = $event->getSalesChannelContext();
+        $query = $request->getQueryString();
+        $qa = parse_query($query);
+        $filterA = $this->getFilterArrayFromRequest($qa);
+        if ( ($filterA === null) || (empty($filterA)) ) return $event;
+        $request = $request->duplicate($qa);
+        $criteria->addExtension('semknoxDataFilter', new ArrayEntity(
+            [
+                'filter' => $filterA
+            ]));
+        $event = new ProductSearchCriteriaEvent($request, $criteria, $context);
+        return $event;
+    }
+    private function getPage(Request $request): int
+    {
+        $page = $request->query->getInt('p', 1);
+        if ($request->isMethod(Request::METHOD_POST)) {
+            $page = $request->request->getInt('p', $page);
+        }
+        return $page <= 0 ? 1 : $page;
+    }
+    private function getLimit(Request $request, SalesChannelContext $context): int
+    {
+        $limit = $request->query->getInt('limit', 0);
+        if ($request->isMethod(Request::METHOD_POST)) {
+            $limit = $request->request->getInt('limit', $limit);
+        }
+        $limit = $limit > 0 ? $limit : $this->systemConfigService->getInt('core.listing.productsPerPage', $context->getSalesChannel()->getId());
+        return $limit <= 0 ? 24 : $limit;
+    }
+    /**
+     * creating interna datasctucture of shopware from the range-values of sitesearch
+     * @param array $data
+     * @return array
+     */
+    private function getMinMaxValuesFromFilterData(array $data) : array
+    {
+        $ret=[];
+        foreach ($data as $k => $v) {
+            if ($v['type']=='RANGE') {
+                $sum=0;$anz=0;
+                $f=$k;
+                foreach ($v['counts'] as $x => $c) {
+                    $sum+=$x*$c;
+                    $anz+=$c;
+                }
+                $v['sum']=$sum;
+                $v['avg']=$sum/$anz;
+                if ( (!isset($v['unit'])) || (empty($v['unit'])) ) {
+                    $v['unit']='';
+                    if (in_array(strtolower($v['name']), ['price','preis','verkaufspreis'])) {
+                        $v['unit']='€';
+                        $v['conceptType']='PRICE_ATTRIBUTE';
+                    }
+                }
+                $v['labelMin'] = $v['name'].' ab';
+                $v['labelMax'] = $v['name'].' bis';
+                $v['labelError'] = 'Der min-Wert von '.$v['name'].' sollte nicht größer sein als der max-Wert!';
+                if (!isset($v['min'])) { $v['min'] = null; }
+                if (!isset($v['max'])) { $v['max'] = null; }
+                if ( (!is_null($v['min'])) && (!is_null($v['max'])) ) {
+                    $ret[]=$v;
+                }
+            }
+            unset($v);
+        }
+        return $ret;
+    }
+    private function getFilterPropertyGroupEntity(array $filter) : ?propertyGroupEntity
+    {
+        $ret = null;
+        if (! in_array($filter['type'], $this->filterableType)) { return $ret; }
+        $pge = new PropertyGroupEntity();
+        $pgeID = '_'.$filter['name'];
+        $pgeIDmm = '_'.$filter['name'];
+        $pge->setId($pgeID);
+        $pge->setName($filter['name']);
+        $pge->addTranslated('name', $filter['name']);
+        $displType='text';$sortType='position';
+        if ($filter['type'] == 'COLOR') {
+            $displType='color';
+        }
+        $pge->setDisplayType($displType);
+        $pge->setSortingType($sortType);
+        $pge->setDescription('');
+        $pgo = new PropertyGroupOptionCollection();
+        $pos=0;
+        if ($displType == 'numeric') {
+            foreach ($filter['counts'] as $k => $v) {
+                $pgoe = new PropertyGroupOptionEntity();
+                $pgoe->setName($k.$filter['unit']);
+                $pgoe->setPosition($pos++);
+                $pgoe->setId($pgeIDmm.'_'.$k);
+                $pgoe->setUniqueIdentifier($pgeIDmm.'_'.$k);
+                $pgoe->addTranslated('name', $k.$filter['unit']);
+                $pgo->add($pgoe);
+            }
+        }
+        if ( ($displType == 'text') || ($displType == 'color') ) {
+            foreach ($filter['values'] as $value) {
+                $pgoe = new PropertyGroupOptionEntity();
+                $pgoe->setName($value['name']);
+                $pgoe->setPosition($pos++);
+                $pgoe->setId($pgeID.'_'.$value['value']);
+                $pgoe->setUniqueIdentifier($pgeID.'_'.$value['value']);
+                $pgoe->addTranslated('name', $value['name']);
+                if ( ($filter['type'] == 'COLOR') && (isset($value['color'])) && (!empty($value['color'])) ) {
+                    $pgoe->setColorHexCode($value['color']);
+                }
+                $pgo->add($pgoe);
+            }
+        }
+        $pge->setOptions($pgo);
+        return $pge;
+    }
+    private function getFilterPropertiesFromResult(array $data) : EntityResult
+    {
+        $pgc = new PropertyGroupCollection() ;
+        foreach ($data as $filter) {
+            $pge = $this->getFilterPropertyGroupEntity($filter);
+            if ($pge === null) { continue; }
+            $pgc->add($pge);
+        }
+        return new EntityResult('properties', $pgc);
+    }
+    /**
+     * transforming filter from sitesearch to shopware-structure
+     * @param ProductListingResult $result
+     */
+    private function setSiteSearchFilterToResult(ProductListingResult $result) : void
+    {
+        $semknoxSort = $result->getExtension('semknoxResultData');
+        if ( ($semknoxSort===null) ) {
+            return;
+        }
+        $stdAggs = $result->getAggregations();
+        $result->getAggregations()->remove('properties');
+        $result->getAggregations()->remove('manufacturer');
+        $result->getAggregations()->remove('price');
+        $result->getAggregations()->remove('shipping-free');
+        $result->getAggregations()->remove('rating');
+        $semknoxData = $semknoxSort->getVars();
+        if ( (!is_array($semknoxData['data'])) || (!is_array($semknoxData['data']['filterData'])) ) {
+            return;
+        }
+        $filterData=$semknoxData['data']['filterData'];
+        /*
+         * first we get the range-filter from the sets
+         * as far as shopware-range-filters are price-filter
+         * so we transfer the range-filter to our own structure and using them by our template-vars
+         * same for prices with range-filter-attribute
+         */
+        $prlist = $this->getMinMaxValuesFromFilterData($filterData);$filterList=[];
+        foreach ($prlist as $pr) {
+            if ($pr!==null) {
+                $sr = new StatsResult('_'.$pr['name'], $pr['min'], $pr['max'], $pr['avg'], $pr['sum']);
+                $sr->addExtension('semknoxData', new ArrayEntity(['filter' => $pr]));
+                $filterList[]= ['semkAr'=>$pr, 'semkSr'=>$sr];
+            }
+        }
+        $result->addExtension('semknoxSearchFilter', new ArrayEntity(
+            [
+                'filter' => $filterList
+            ]));
+        $properties = $this->getFilterPropertiesFromResult($filterData);
+        $result->getAggregations()->set('properties', $properties);
+    }
+    private function addCurrentListingFilters(ProductListingResultEvent $event): void
+    {
+        $result = $event->getResult();
+        $this->setSiteSearchFilterToResult($result);
     }
 }

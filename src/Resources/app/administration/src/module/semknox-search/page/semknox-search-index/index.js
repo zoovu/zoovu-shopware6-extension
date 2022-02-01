@@ -386,6 +386,10 @@ Shopware.Component.register('semknox-search-index', {
 					this.semknoxConfigData['semknoxSearch.config.semknoxUpdateUseVariantMaster'] = false;
 					this.ScLangConfigData['semknoxSearch.config.semknoxUpdateUseVariantMaster'] = false;
 				}
+				if (!this.semknoxConfigData.hasOwnProperty('semknoxSearch.config.semknoxActivateCategoryListing')) {
+					this.semknoxConfigData['semknoxSearch.config.semknoxActivateCategoryListing'] = false;
+					this.ScLangConfigData['semknoxSearch.config.semknoxActivateCategoryListing'] = false;
+				}
 				this.checkRequiredFields();
 				//this.semknoxConfigData = res;
 				this.CurrentCustomerId = this.ScLangConfigData['semknoxSearch.config.semknoxC01CustomerId'];
@@ -492,8 +496,11 @@ Shopware.Component.register('semknox-search-index', {
 			this.saveSingle('semknoxSearch.config.semknoxActivate');
 			this.saveSingle('semknoxSearch.config.semknoxActivateUpdate');
 			this.saveSingle('semknoxSearch.config.semknoxActivateAutosuggest');
+			/*
 			this.saveSingle('semknoxSearch.config.semknoxUpdateBlocksize');
 			this.saveSingle('semknoxSearch.config.semknoxUpdateUseVariantMaster');
+			*/
+			this.saveSingle('semknoxSearch.config.semknoxActivateCategoryListing');
 		},
 		
 		onSavePrefs() {

@@ -17,10 +17,10 @@ class siteSearchEntitySearcher
      * @var Client
      */
     private $client;
-    /**
-     * @var SemknoxsearchHelper
-     */
-    private $helper;
+        /**
+         * @var SemknoxsearchHelper
+         */
+        private $helper;
     public function __construct(
         Client $client,
         SemknoxsearchHelper $helper

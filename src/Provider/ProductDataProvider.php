@@ -172,7 +172,7 @@ class ProductDataProvider implements ProductProviderInterface
         */
         $np="";
         if (!empty($logPath)) { $np = $logPath.'allprods.json'; }
-        if ( (empty($offset)) && (file_exists($np)) ) { unlink($np); }        
+        if ( (empty($offset)) && (file_exists($np)) ) { unlink($np); }      
         if (!file_exists($np)) {
             $this->genAllProdsList($salesChannelContext, $np, $offset, $limit);
         } else {
