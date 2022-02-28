@@ -1,3 +1,6 @@
+#3.0.2
+- added no-log-Parameter
+
 #3.0.1
 - added CategoryListing to siteSearch360
 
