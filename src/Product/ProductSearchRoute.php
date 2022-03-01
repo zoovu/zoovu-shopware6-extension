@@ -134,6 +134,7 @@ class ProductSearchRoute extends AbstractProductSearchRoute
             $this->addSortingFromRequest($request, $criteria);
             $this->addFilterFromRequest($request, $criteria);
         }
+        $this->addInfosFromRequest($request, $criteria);
         $criteria->addFilter(
             new ProductAvailableFilter($context->getSalesChannel()->getId(), ProductVisibilityDefinition::VISIBILITY_SEARCH)
             );
@@ -274,6 +275,19 @@ class ProductSearchRoute extends AbstractProductSearchRoute
         }
         $qa=$newf;
         return $ret;
+    }
+    private function addInfosFromRequest(Request &$request, Criteria $criteria) : void    
+    {
+        $onlyAggr = $request->get('only-aggregations');
+        $reduceAggr = $request->get('reduce-aggregations');
+        $logFalse = 0;
+        if ($onlyAggr) {
+            $logFalse = 1;
+        }
+        $criteria->addExtension('semknoxDataInfo', new ArrayEntity(
+            [
+                'logFalse' => $logFalse
+            ]));
     }
     private function addFilterFromRequest(Request &$request, Criteria $criteria) : void
     {

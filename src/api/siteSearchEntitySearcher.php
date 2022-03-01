@@ -17,10 +17,10 @@ class siteSearchEntitySearcher
      * @var Client
      */
     private $client;
-    /**
-     * @var SemknoxsearchHelper
-     */
-    private $helper;
+        /**
+         * @var SemknoxsearchHelper
+         */
+        private $helper;
     public function __construct(
         Client $client,
         SemknoxsearchHelper $helper
@@ -92,6 +92,13 @@ class siteSearchEntitySearcher
         $search->setFrom($criteria->getOffset());
         $this->helper->addPostFilters($definition, $criteria, $search, $context);
         $this->helper->addSortings($definition, $criteria, $search, $context);
+        if ($criteria->hasExtension('semknoxDataInfo')) {
+            $semkInfo = $criteria->getExtension('semknoxDataInfo');
+            $noLog = $semkInfo->get('logFalse');
+            if ($noLog) {
+                $search->setNoLog(1);                
+            }
+        }
         return $search;
     }
     private function hydrate(Criteria $criteria, Context $context, Searchbody $result): IdSearchResult

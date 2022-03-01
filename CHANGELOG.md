@@ -1,3 +1,9 @@
+#3.0.2
+- added no-log-Parameter
+
+#3.0.1
+- added CategoryListing to siteSearch360
+
 #2.9.3
 - changed API-endpoint to api-shopware.sitesearch360.com
 - added Autosuggest-JS-Function from siteSearch360 via config-param

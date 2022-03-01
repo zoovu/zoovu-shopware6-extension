@@ -41,6 +41,7 @@
             <argument type="service" id="Shopware\Core\Content\Product\ProductDefinition"/>            
             <argument>%kernel.logs_dir%</argument>
 						<argument type="service" id="request_stack" />
+						<argument type="service" id="Shopware\Core\System\SystemConfig\SystemConfigService"/>
         </service>
 
         <service id="semknox\search\api\Client" public="true" >
@@ -67,12 +68,22 @@
             <argument type="service" id="sales_channel.product.repository"/>
             <argument type="service" id="Shopware\Core\System\SystemConfig\SystemConfigService"/>
             <argument type="service" id="Doctrine\DBAL\Connection"/>
-			<argument type="service" id="Shopware\Core\Content\Product\SalesChannel\Listing\ProductListingLoader"/>
+						<argument type="service" id="Shopware\Core\Content\Product\SalesChannel\Listing\ProductListingLoader"/>
             <argument type="service" id="semknox\search\api\siteSearchEntitySearcher"/>            
             <argument type="service" id="Shopware\Core\Content\Product\ProductDefinition"/>
 			
         </service>
         
+        <service id="semknox\search\Product\ProductListingRoute" public="true">
+            <argument type="service" id="Shopware\Core\Content\Product\SalesChannel\Listing\ProductListingLoader" />
+            <argument type="service" id="event_dispatcher"/>
+            <argument type="service" id="category.repository"/>
+            <argument type="service" id="Shopware\Core\Content\ProductStream\Service\ProductStreamBuilder"/>
+            <argument type="service" id="semknox_logs.repository" />                        
+            <argument type="service" id="translator"/>
+            <argument type="service" id="semknox\search\Framework\SemknoxsearchHelper"/>              
+            <argument type="service" id="semknox\search\Product\SemknoxProductListingLoader"/>
+        </service>
         
         <service id="semknox\search\Product\ProductSearchRoute">
             <argument type="service" id="semknox\search\Product\ProductSearchBuilder"/>
@@ -85,6 +96,47 @@
             <argument type="service" id="semknox\search\Framework\SemknoxsearchHelper"/>            
         </service>
 
+
+        <service id="semknox\search\Content\SiteSearchProductListingCmsElementResolver">
+            <argument type="service" id="semknox\search\Product\ProductListingRoute" />
+            <argument type="service" id="semknox\search\Framework\SemknoxsearchHelper"/>
+        </service>
+
+
+        <service id="semknox\search\Content\SiteSearchCmsSlotsDataResolver">
+            <argument type="tagged" tag="shopware.cms.data_resolver"/>
+            <argument type="collection">
+                <argument type="service" key="product" id="sales_channel.product.repository" />
+            </argument>
+            <argument type="service" id="Shopware\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry"/>            
+            <argument type="service" id="semknox\search\Product\SemknoxProductListingLoader"/>
+            <argument type="service" id="semknox\search\Content\SiteSearchProductListingCmsElementResolver"/>
+            <argument type="service" id="semknox\search\Framework\SemknoxsearchHelper"/>
+        </service>
+      
+        <service id="semknox\search\Content\SiteSearchSalesChannelCmsPageLoader"
+                decorates="Shopware\Core\Content\Cms\SalesChannel\SalesChannelCmsPageLoader"
+                public="true"
+       	>
+       			<argument type="service" id="semknox\search\Content\SiteSearchSalesChannelCmsPageLoader.inner"/>        
+            <argument type="service" id="cms_page.repository"/>
+            <argument type="service" id="semknox\search\Content\SiteSearchCmsSlotsDataResolver"/>
+            <argument type="service" id="event_dispatcher"/>
+            <argument type="service" id="semknox\search\Framework\SemknoxsearchHelper"/>
+
+        </service>
+
+        <service id="semknox\search\Content\SiteSearchCategoryRoute"
+                decorates="Shopware\Core\Content\Category\SalesChannel\CategoryRoute"
+                public="true"
+       	>
+            <argument type="service" id="sales_channel.category.repository"/>
+            <argument type="service" id="Shopware\Core\Content\Cms\SalesChannel\SalesChannelCmsPageLoader"/>
+            <argument type="service" id="Shopware\Core\Content\Category\SalesChannel\SalesChannelCategoryDefinition"/>
+            <argument type="service" id="semknox\search\Framework\SemknoxsearchHelper"/>
+            <argument type="service" id="semknox\search\Content\SiteSearchCategoryRoute.inner"/>
+        </service>
+         
         <service id="semknox\search\Product\ProductSuggestRoute">
             <argument type="service" id="semknox\search\Product\ProductSearchBuilder"/>
             <argument type="service" id="event_dispatcher"/>
