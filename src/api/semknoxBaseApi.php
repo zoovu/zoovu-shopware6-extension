@@ -13,7 +13,6 @@ use semknox\search\Struct\ProductResult;
 		public $debugMode = 0;
 		public $debugTimes = array();
 		public $shopControllerString=''; /** controller-Info from shopware */
-		public $sourceParam= 0; /** source-params to send to sitesearch for exclude from counting queries, 1="SHOPWARE-Prefiltering" */
 		private $queryId=''; /** query-ID-param of sitesearch. */
 		private $expires=0; /** expires-parameter of sitesearch. */
 		public  $groupIdList=array(); /** contains assignement of groupID to articleID in searchResults in the way  [groupIdList] => Array ( [516931450] => Array ( [articles] => Array ( [0] => 183.203 [1] => 183.208 [2] => 183.203A ) ) [517051294] => Array ( [articles] => Array ( [0] => 271.467 [1] => 271.468 ) ) [516994839] => Array ( [articles] => Array ( [0] => 773.007 [1] => 773.005 [2] => 773.011 [3] => 773.009 ) )) */
@@ -270,10 +269,9 @@ use semknox\search\Struct\ProductResult;
 		    $params['query']=$body->getTerm();
 		    $params['offset']=$body->getFrom();
 		    $params['limit']=$body->getSize();
-		    switch ($this->sourceParam) {
-		        case 1   : $params['source'] ='SHOPWARE-Prefiltering';
-		        case 2   : $params['source']='SHOPWARE_404';
-		    }		    
+		    if ($body->getNoLog()) {
+		        $params['log'] = 'false';
+		    }
 		    $f=array();
 		    foreach($body->getSearchFilters() as $k => $v) {
 		        if (!is_array($v)) {continue;}

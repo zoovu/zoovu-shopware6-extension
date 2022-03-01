@@ -64,6 +64,11 @@ class Searchbody
      */
     private $callResults = [];
     /**
+     * log the request at siteSearch360-server or not, default is log
+     * @var int
+     */
+    private $noLog = 0;
+    /**
      * searchresults from sitesearch-api-call
      * @var array
      */
@@ -731,5 +736,19 @@ class Searchbody
         }
      */
         return $output;
+    }
+    /**
+     * @return int
+     */
+    public function getNoLog() : int
+    {
+        return $this->noLog;
+    }
+    /**
+     * @param int $value
+     */
+    public function setNoLog($value) : void
+    {
+        $this->noLog = $value;
     }
 }
