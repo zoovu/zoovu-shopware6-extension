@@ -1,0 +1,101 @@
+{% block ss360_component_product_box %}
+        {% set name = rmItem.name %}
+        {% set id = rmItem.id %}
+        {% set cover = rmItem.image %}
+        {% set variation = [] %}
+        {% set link = rmItem.link %}
+        {% set description = rmItem.content %}
+
+        <div class="card product-box box-{{ layout }} ss360-product-box">
+            {% block ss360_component_product_box_content %}
+                <div class="card-body">
+                    {% block ss360_component_product_box_image %}
+                        <div class="product-image-wrapper">
+                            {# fallback if display mode is not set #}
+                            {% set displayMode = displayMode ?: 'standard' %}
+
+                            {# set display mode 'cover' for box-image with standard display mode #}
+                            {% if layout == 'image' and displayMode == 'standard' %}
+                                {% set displayMode = 'cover' %}
+                            {% endif %}
+
+                            <a href="{{ link }}"
+                               title="{{ name }}"
+                               class="product-image-link is-{{ displayMode }}">
+                                {% if cover %}
+                                    {% set attributes = {
+                                        'class': 'product-image is-'~displayMode,
+                                        'alt': (name),
+                                        'title': (name)
+                                    } %}
+
+                                    {% if displayMode == 'cover' or displayMode == 'contain' %}
+                                        {% set attributes = attributes|merge({ 'data-object-fit': displayMode }) %}
+                                    {% endif %}
+                                    
+                                    <img src="{{ cover }}" class="product-image is-standard">
+
+                                {% else %}
+                                    <div class="product-image-placeholder">
+                                        {% sw_icon 'placeholder' style {
+                                            'size': 'fluid'
+                                        } %}
+                                    </div>
+                                {% endif %}
+                            </a>
+
+
+                        </div>
+                    {% endblock %}
+
+                    {% block ss360_component_product_box_info %}
+                        <div class="product-info">
+														{% block ss360_component_product_box_rating %}
+                                {% if config('core.listing.showReview') %}
+                                    <div class="product-rating">
+                                    </div>
+                                {% endif %}                                    														
+														{% endblock %}
+														
+                            {% block ss360_component_product_box_name %}
+                                <a href="{{ link }}"
+                                   class="product-name"
+                                   title="{{ name }}">
+                                    {{ name }}
+                                </a>
+                            {% endblock %}
+
+                            {% block ss360_component_product_box_description %}
+                                <div class="product-description">
+                                    {{ description }}
+                                </div>
+                            {% endblock %}
+
+														{% block ss360_component_product_box_price_info %}
+														<div class="product-price-info">
+																<div class="product-price-wrapper">
+																	<span class="product-price">&nbsp;</span>
+																	<p class="product-price-unit"></p>
+																</div>
+														</div>																												
+														{% endblock %}
+														
+                            {% block ss360_component_product_box_action %}
+															{% block ss360_component_product_box_action_inner %}
+										            {% block ss360_component_product_box_action_detail %}
+										            	<div class="product-action">
+										                <a href="{{ link }}"
+										                   class="btn btn-block btn-light"
+										                   title="{{ name }}">
+										                    {{ "listing.boxProductDetails"|trans|sw_sanitize }}
+										                </a>
+										              </div>
+										            {% endblock %}															
+															{% endblock %}															
+                            {% endblock %}														
+                        </div>
+                    {% endblock %}
+                </div>
+            {% endblock %}
+        </div>
+{% endblock %}

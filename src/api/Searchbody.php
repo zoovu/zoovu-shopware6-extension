@@ -76,6 +76,12 @@ class Searchbody
     private $searchResultsInfo = array('totalResults'=>-1, 'totalResultsVariants'=>-1);       
     private $customSearchResults = array();
     private $customSearchResultsInfo = array('totalResults'=>-1, 'totalResultsVariants'=>-1); 
+    /**
+     * array of infos for resultmanager-output, this array contains both, the "normal" searchresults and the html- or custom products in items-subset
+     * countProducts contains artificial products count and countHTML the number of HTML-sets in resultset 
+     * @var array
+     */
+    private $resultManagerResults = ['countArtProducts'=>0, 'countHTML'=>0, 'countProducts'=>0, 'items'=>[]];
     private $resultsAvailable = 0;
     private $totalResults = 0;
     private $groupedResultsAvailable = 0;
@@ -253,13 +259,31 @@ class Searchbody
     public function addSearchResults(array $sr) {
         $this->searchResults = [];
         $this->customSearchResults = [];
+        $this->resultManagerResults = ['countArtProducts'=>0, 'countHTML'=>0, 'countProducts'=>0, 'items'=>[]];
         foreach ($sr as $scat) {
             if ( (is_array($scat)) && ($scat['type']=='products') ) {
                 if (isset($scat['totalResults'])) { $this->searchResultsInfo['totalResults'] = $scat['totalResults']; }
                 if (isset($scat['totalResultsVariants'])) { $this->searchResultsInfo['totalResultsVariants'] = $scat['totalResultsVariants']; }
                 foreach ($scat['results'] as $gr) {
-                    $ngr = ['items'=>[], 'grId'=>''];
+                    $ngr = ['items'=>[], 'grId'=>'', 'html'=>[], 'artProduct'=>[]];
+                    $fSpec=0;
                     foreach ($gr as $it) {
+                        if ( (isset($it['type'])) && ($it['type']=='HTML') ) {
+                            $it['type'] = 'artProduct';
+                            $ngr['artProduct'] = $it;
+                            $this->resultManagerResults['items'][]=$ngr;
+                            $this->resultManagerResults['countArtProducts']++;
+                            $fSpec++;
+                            continue;
+                        }
+                        if ( (isset($it['type'])) && ($it['type']=='custom') ) {
+                            $it['type'] = 'html';
+                            $ngr['html'] = $it;
+                            $this->resultManagerResults['items'][]=$ngr;
+                            $this->resultManagerResults['countHTML']++;
+                            $fSpec++;
+                            continue;
+                        }
                         if ($ngr['grId']=='') {
                             $ngr['grId']=$it['groupId'];
                         }
@@ -273,13 +297,41 @@ class Searchbody
                         if (isset($it['datapoints'])) { $nit['datapoints'] = $it['datapoints']; }
                         $ngr['items'][]=$nit;
                     }
-                    $this->searchResults[]=$ngr;
+                    if ($fSpec==0) {
+                        $this->searchResults[]=$ngr;
+                        $this->resultManagerResults['countProducts']++;
+                        $this->resultManagerResults['items'][]=$ngr;
+                    }
                 }
             } else {
                 $this->customSearchResults[]=$scat;
                 if (isset($scat['totalResults'])) { $this->customSearchResultsInfo['totalResults'] = $scat['totalResults']; }
                 if (isset($scat['totalResultsVariants'])) { $this->customSearchResultsInfo['totalResultsVariants'] = $scat['totalResultsVariants']; }
             }
+        }
+        $this->cleanResultManagerResults();
+    }
+    private function cleanResultManagerResults() {
+        if ( ($this->resultManagerResults['countArtProducts']>0) || ($this->resultManagerResults['countHTML']>0) ) {
+            $beforeItems = []; $nItems=[];
+            foreach ($this->resultManagerResults['items'] as $item) {
+                if ( (is_array($item['artProduct'])) && (!empty($item['artProduct'])) ) {
+                    $beforeItems[]=$item['artProduct'];
+                    continue;
+                }
+                if ( (is_array($item['html'])) && (!empty($item['html'])) ) {
+                    $beforeItems[]=$item['html'];
+                    continue;
+                }
+                $nItems[$item['grId']]=$beforeItems;                
+                $beforeItems=[];
+            }
+            if (!empty($beforeItems)) {
+                $nItems['end']=$beforeItems;
+            }
+            $this->resultManagerResults['itemsByProducts']=$nItems;
+        } else {
+            unset($this->resultManagerResults['items']);
         }
     }
     public function setResultsAvailable(int $sm) : void
@@ -353,6 +405,9 @@ class Searchbody
         $a['queryWasCorrected'] = $this->resultQueryWasCorrected;
         $a['answerText'] = $this->answerText;
         return $a;
+    }
+    public function getResultManagerData() : array {
+        return $this->resultManagerResults;
     }
     /**
      * returns true, if opt-sorting is selected

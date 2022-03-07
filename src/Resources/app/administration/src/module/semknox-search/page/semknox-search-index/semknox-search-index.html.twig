@@ -202,6 +202,22 @@
 											              	    </sw-inherit-wrapper>
 											              	{% endblock %}
 								                  
+											              	{% block semknox_search_content_card_channel_config_credentials_card_container_settings_activate_search_template %}
+											              	    <sw-inherit-wrapper v-model="ScLangConfigData['semknoxSearch.config.semknoxActivateSearchTemplate']"
+											              	                        :customInheritationCheckFunction="checkTextFieldInheritance">
+											              	        <template #content="props">
+											              	            <sw-switch-field name="semknoxSearch.config.semknoxActivateSearchTemplate"
+											              	                           :mapInheritance="props"
+											              	                           :label="$tc('semknox-search.settingForm.credentials.semknoxActivateSearchTemplate.label')"
+											              	                           :helpText="$tc('semknox-search.settingForm.credentials.semknoxActivateSearchTemplate.tooltipText')"
+											              	                           :disabled="props.isInherited || !aclAllowed('semknox_search.editor')"
+											              	                           :value="props.currentValue"
+											              	                           @change="props.updateCurrentValue">
+											              	            </sw-switch-field>
+											              	        </template>
+											              	    </sw-inherit-wrapper>
+											              	{% endblock %}
+								                  
 
 								                    </div>
 

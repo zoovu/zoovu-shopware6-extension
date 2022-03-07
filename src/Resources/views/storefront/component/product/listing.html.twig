@@ -1,0 +1,66 @@
+{% sw_extends '@Storefront/storefront/component/product/listing.html.twig' %}
+
+                {% block element_product_listing_row %}
+									{% if page.listing.extensions.semknoxResultData.useSearchTemplate %}                
+                    <div class="row cms-listing-row js-listing-wrapper">
+                        {% if searchResult.total > 0 or page.listing.extensions.semknoxResultData.useSearchTemplate > 0 %}
+                            {% block element_product_listing_col %}
+                                {% for product in searchResult %}                                
+                             				{% set rmResults = page.listing.extensions.semknoxResultData.resultManager.itemsByProducts[product.id] %}
+                                		{% for rmItem in rmResults %}
+                                			{% if rmItem.type == 'html' %}
+                                				<div class="ss360-product-html">
+                                					{{ rmItem.html | raw }}
+                                				</div>
+                                			{% endif %}
+                                			{% if rmItem.type == 'artProduct' %}
+                                				<div class="cms-listing-col {{ listingColumns }}">
+                                        {% sw_include '@Storefront/storefront/component/product/card/ss360_box.html.twig' with {
+                                            'layout': boxLayout,
+                                            'displayMode': displayMode,
+                                            'rmItem' : rmItem
+                                        } %}
+                                        </div>
+                                			{% endif %}                                			
+                                		{% endfor %}
+                                    <div class="cms-listing-col {{ listingColumns }}">
+                                        {% block element_product_listing_box %}
+                                            {% sw_include '@Storefront/storefront/component/product/card/box.html.twig' with {
+                                                'layout': boxLayout,
+                                                'displayMode': displayMode
+                                            } %}
+                                        {% endblock %}
+                                    </div>
+                                    
+                                {% endfor %}
+
+                             				{% set rmResults = page.listing.extensions.semknoxResultData.resultManager.itemsByProducts.end %}
+                                		{% for rmItem in rmResults %}
+                                			{% if rmItem.type == 'html' %}
+                                				<div class="ss360-product-html">
+                                					{{ rmItem.html | raw }}
+                                				</div>
+                                			{% endif %}
+                                			{% if rmItem.type == 'artProduct' %}
+                                				<div class="cms-listing-col {{ listingColumns }}">
+                                        {% sw_include '@Storefront/storefront/component/product/card/ss360_box.html.twig' with {
+                                            'layout': boxLayout,
+                                            'displayMode': displayMode,
+                                            'rmItem' : rmItem
+                                        } %}
+                                        </div>
+                                			{% endif %}                                			
+                                		{% endfor %}
+                                
+                                
+                            {% endblock %}
+                        {% else %}
+                            {% block element_product_listing_col_empty %}
+															{{ parent() }}
+                            {% endblock %}
+                        {% endif %}
+                    </div>
+                  {% else %}
+                  	{{ parent() }}
+                  {% endif %}
+                {% endblock %}

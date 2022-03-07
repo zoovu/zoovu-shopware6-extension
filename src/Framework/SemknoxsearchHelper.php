@@ -730,6 +730,7 @@ class SemknoxsearchHelper
                 if (trim($lange['semknoxApiKey'])=='') { $valid=false; }
                 if (empty($lange['semknoxUpdateBlocksize'])) { $lange['semknoxUpdateBlocksize']=500; }
                 if (empty($lange['semknoxActivateCategoryListing'])) { $lange['semknoxActivateCategoryListing']=false; }
+                if (empty($lange['semknoxActivateSearchTemplate'])) { $lange['semknoxActivateSearchTemplate']=false; }
                 if (empty($lange['semknoxActivateAutosuggest'])) { $lange['semknoxActivateAutosuggest']=false; }
                 $lange['semknoxUpdateBlocksize'] = intval($lange['semknoxUpdateBlocksize']);
                 if ($valid) {
@@ -738,6 +739,7 @@ class SemknoxsearchHelper
                     $lange['semknoxActivate'] = false;
                     $lange['semknoxActivateUpdate'] = false;
                     $lange['semknoxActivateCategoryListing'] = false;
+                    $lange['semknoxActivateSearchTemplate'] = false;
                 }
                 unset($lange);
             }
@@ -760,6 +762,7 @@ class SemknoxsearchHelper
             $config['semknoxActivate'] = false;
             $config['semknoxActivateUpdate'] = false;
             $config['semknoxActivateCategoryListing'] = false;
+            $config['semknoxActivateSearchTemplate'] = false;            
         }
     }
     /**
