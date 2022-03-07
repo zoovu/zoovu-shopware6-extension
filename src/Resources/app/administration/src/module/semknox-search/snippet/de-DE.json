@@ -115,6 +115,10 @@
                 	"label" : "Nutze SiteSearch360 für das Kategorie-Listing",
                 	"tooltipText": "Aktiviere diese Option, um die Daten für die Kategorie-Listings ebenfalls durch SiteSearch360 zu generieren."
                 },
+                "semknoxActivateSearchTemplate": {
+                	"label" : "Aktiviere Template auf Suchausgabe-Seite",
+                	"tooltipText": "Aktivieren Sie diese Option, um die Template-Ausgabe durch das Plugin auf der Suchseite zu aktivieren (z.B. um die HTML-Ausgaben aus dem Resultmanager zu aktivieren)."
+                },
                 "button": {
                     "title": "API-Zugangsdaten holen",
                     "titleAlt": "",

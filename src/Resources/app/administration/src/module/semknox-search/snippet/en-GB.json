@@ -115,6 +115,10 @@
                 	"label" : "use SiteSearch360-data for category-listings",
                 	"tooltipText": "if you want to use the SiteSearch360-data in your category-listings, set this to true"
                 },
+                "semknoxActivateSearchTemplate": {
+                	"label" : "use SiteSearch360-template search-listing-output",
+                	"tooltipText": "if you want to activate the SiteSearch360-template on search-listing-output, set this to true"
+                },
                 "button": {
                     "title": "Get API-credentials",
                     "titleAlt": "",
