@@ -21,6 +21,7 @@ class siteSearchEntitySearcher
          * @var SemknoxsearchHelper
          */
         private $helper;
+        private $config = [];
     public function __construct(
         Client $client,
         SemknoxsearchHelper $helper
@@ -45,6 +46,7 @@ class siteSearchEntitySearcher
         if (is_null($mainConfig)) {           
             return $this->decorated->search($definition, $criteria, $context);
         }
+        $this->config=$mainConfig;
         $searchMode = 0;
         if ($controller == 'Shopware\Storefront\Controller\SearchController::suggest') {
             $searchMode = 11;
@@ -108,7 +110,8 @@ class siteSearchEntitySearcher
                 'metaData' => $result->getSearchMetadata(),
                 'sortData' => $result->getSortData(),
                 'filterData' => $result->getFilterData(),
-                'jsonDecoded' => $result->getDecodedJson()
+                'jsonDecoded' => $result->getDecodedJson(),
+                'resultManager' => $result->getResultManagerData()
             ]
             ));
         if ($result->getRedirect()!='') {
@@ -140,7 +143,16 @@ class siteSearchEntitySearcher
             return $res;
         }
         $hits = $result->getResultListCalc();
-        if (count($hits) <= 0) {
+        $useSearchTemplate=0;
+        if ($this->config['semknoxActivateSearchTemplate']) {
+            $useSearchTemplate=1;
+        }
+        $rm = $result->getResultManagerData();
+        $c=0;
+        if (isset($rm['countArtProducts'])) { $c+=$rm['countArtProducts']; }
+        if (isset($rm['countHTML'])) { $c+=$rm['countHTML']; }
+        if ($c==0) { $useSearchTemplate=0; }
+        if ( (count($hits) <= 0) && ($useSearchTemplate==0) ) {
             return new IdSearchResult(0, [], $criteria, $context);
         }
         $data = [];
@@ -167,7 +179,9 @@ class siteSearchEntitySearcher
                 'sortData' => $result->getSortData(),
                 'filterData' => $result->getFilterData(),
                 'customResults' => $result->getCustomResults(),
-                'jsonDecoded' => $result->getDecodedJson()
+                'jsonDecoded' => $result->getDecodedJson(),
+                'resultManager' => $rm,
+                'useSearchTemplate' => $useSearchTemplate 
             ]
             ));
         return $res;

@@ -1,3 +1,6 @@
+#3.1.1
+- added Resultmanager-Handling 
+
 #3.0.2
 - added no-log-Parameter
 

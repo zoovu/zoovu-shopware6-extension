@@ -74,16 +74,33 @@ class SemknoxProductListingLoader
                 }
             }
             if (empty($ids->getIds())) {
-                $res = new EntitySearchResult(
-                    $this->prodDefinition->getEntityName(),
-                    0,
-                    new ProductCollection(),
-                    new AggregationResultCollection(),
-                    $origin,
-                    $context->getContext()
-                    );
-                $this->addExtensions($ids, $res);
-                return $res;
+                if (($semknoxData['data']['useSearchTemplate']==1)) {
+                    $total = 0;
+                    if (isset($semknoxData['data']['jsonDecoded']['totalResults'])) {
+                        $total = intval($semknoxData['data']['jsonDecoded']['totalResults']);
+                    }
+                    $res = new EntitySearchResult(
+                        $this->prodDefinition->getEntityName(),
+                        $total,
+                        new ProductCollection(),
+                        new AggregationResultCollection(),
+                        $origin,
+                        $context->getContext()
+                        );
+                    $this->addExtensions($ids, $res);
+                    return $res;
+                } else {                    
+                    $res = new EntitySearchResult(
+                        $this->prodDefinition->getEntityName(),
+                        0,
+                        new ProductCollection(),
+                        new AggregationResultCollection(),
+                        $origin,
+                        $context->getContext()
+                        );
+                    $this->addExtensions($ids, $res);
+                    return $res;
+                }
             }
             $aggregations = new AggregationResultCollection(); 
             $variantIds = $ids->getIds();
