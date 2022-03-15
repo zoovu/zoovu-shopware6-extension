@@ -137,9 +137,10 @@ class SiteSearchProductListingFeaturesSubscriber extends ProductListingFeaturesS
         }
         $limit = $event->getCriteria()->getLimit();
         $key = $request->get('order');
+        if (!isset($key)) { $key = null; }
         if ($key=='topseller') {
             $criteria->resetSorting();
-            unset($key);
+            $key=null;
         }
         if (is_null($key)) {
             $this->addQueryToRequest($request, '&order=score');
@@ -178,9 +179,10 @@ class SiteSearchProductListingFeaturesSubscriber extends ProductListingFeaturesS
         }
         $limit = $event->getCriteria()->getLimit();
         $key = $request->get('order');
+        if (!isset($key)) { $key = null; }
         if ($key=='topseller') {
             $criteria->resetSorting();
-            unset($key);
+            $key=null;
         }
         if (is_null($key)) {
             $this->addQueryToRequest($request, '&order=score');
