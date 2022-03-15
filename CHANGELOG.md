@@ -1,3 +1,6 @@
+#3.1.2 
+fix sortkey  if ($key=='topseller') if key is not set in SiteSearchProductListingFeatureSubscriber
+
 #3.1.1
 - added Resultmanager-Handling 
 
