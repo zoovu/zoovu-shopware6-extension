@@ -34,6 +34,8 @@ use Shopware\Core\Framework\Struct\ArrayEntity;
 use Composer\InstalledVersions;
 class SemknoxsearchHelper
 {
+    const FilterPrefix = '~';
+    const FilterListSeparator = '|';
     /**
      * @var Client
      */
@@ -1130,5 +1132,30 @@ class SemknoxsearchHelper
             $page = $request->request->getInt('p', $page);
         }
         return $page <= 0 ? 1 : $page;
+    }
+    /**
+     * add const filterPrefix to String
+     * @param string $str
+     * @return string
+     */
+    public function addFilterPrefix(string $str) : string {
+        if (is_null($str)) return $str;
+        return self::FilterPrefix.$str;
+    }
+    /**
+     * returns List of filter-properties
+     * @param string $queryString
+     * @return array
+     */
+    public function getFilterPropertiesList(string $queryString) : array {
+        return explode(self::FilterListSeparator, $queryString);
+    }
+    /**
+     * returns array of feature [1] = value [2]
+     * @param string $queryString
+     * @return array
+     */
+    public function getFilterPropertiesEntity(string $queryString) : array {
+        return explode(self::FilterPrefix, $queryString);
     }
 }
