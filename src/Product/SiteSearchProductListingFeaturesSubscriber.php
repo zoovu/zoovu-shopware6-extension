@@ -553,9 +553,9 @@ class SiteSearchProductListingFeaturesSubscriber extends ProductListingFeaturesS
                 }
             }
             if (strtolower($key)=='properties') {
-                $x=explode('|',$qitem);
+                $x = $this->semknoxSearchHelper->getFilterPropertiesList($qitem);
                 foreach ($x as $xqitem) {
-                    $h=explode('_',$xqitem);
+                    $h=$this->semknoxSearchHelper->getFilterPropertiesEntity($xqitem);
                     if (count($h)>2) {
                         $ha = ['name'=>'', 'valueList'=>[], 'valType'=>'list', 'value'=>''];
                         $ha['name']=$h[1];
