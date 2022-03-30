@@ -1,3 +1,6 @@
+#3.1.3
+fix: changed underscore to tilde on propertyfilter
+
 #3.1.2 
 fix sortkey  if ($key=='topseller') if key is not set in SiteSearchProductListingFeatureSubscriber
 

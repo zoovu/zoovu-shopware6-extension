@@ -358,8 +358,8 @@ class ProductSearchRoute extends AbstractProductSearchRoute
         $ret = null;
         if (! in_array($filter['type'], $this->filterableType)) { return $ret; }
         $pge = new PropertyGroupEntity();
-        $pgeID = '_'.$filter['name'];
-        $pgeIDmm = '_'.$filter['name'];
+        $pgeID = $this->semknoxSearchHelper->addFilterPrefix($filter['name']);
+        $pgeIDmm = $this->semknoxSearchHelper->addFilterPrefix($filter['name']);
         $pge->setId($pgeID);
         $pge->setName($filter['name']);
         $pge->addTranslated('name', $filter['name']);
@@ -385,8 +385,8 @@ class ProductSearchRoute extends AbstractProductSearchRoute
                 $pgoe = new PropertyGroupOptionEntity();
                 $pgoe->setName($k.$filter['unit']);
                 $pgoe->setPosition($pos++);
-                $pgoe->setId($pgeIDmm.'_'.$k);
-                $pgoe->setUniqueIdentifier($pgeIDmm.'_'.$k);
+                $pgoe->setId($pgeIDmm.$this->semknoxSearchHelper->addFilterPrefix($k));
+                $pgoe->setUniqueIdentifier($pgeIDmm.$this->semknoxSearchHelper->addFilterPrefix($k));
                 $pgoe->addTranslated('name', $k.$filter['unit']);
                 $pgo->add($pgoe);
             }
@@ -396,8 +396,8 @@ class ProductSearchRoute extends AbstractProductSearchRoute
                 $pgoe = new PropertyGroupOptionEntity();
                 $pgoe->setName($value['name']);
                 $pgoe->setPosition($pos++);
-                $pgoe->setId($pgeID.'_'.$value['value']);
-                $pgoe->setUniqueIdentifier($pgeID.'_'.$value['value']);
+                $pgoe->setId($pgeID.$this->semknoxSearchHelper->addFilterPrefix($value['value']));
+                $pgoe->setUniqueIdentifier($pgeID.$this->semknoxSearchHelper->addFilterPrefix($value['value']));
                 $pgoe->addTranslated('name', $value['name']);
                 if ( ($filter['type'] == 'COLOR') && (isset($value['color'])) && (!empty($value['color'])) ) {
                     $pgoe->setColorHexCode($value['color']);
