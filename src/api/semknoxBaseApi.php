@@ -276,7 +276,7 @@ use semknox\search\Struct\ProductResult;
 		    foreach($body->getSearchFilters() as $k => $v) {
 		        if (!is_array($v)) {continue;}
 		        if (count($v)) {
-		            $e=array('name'=>$v['name']);
+		            $e=array('name'=>$v['name'], 'type'=>'products');
 		            if ( $v['type']=='minmax' ) {		                
 		                if ( (isset($v['minValue'])) && ($v['minValue']!='') ) { $e['min']=($v['minValue']); } else { $e['min']=0; }
 		                if ( (isset($v['maxValue'])) && ($v['maxValue']!='') ) { $e['max']=($v['maxValue']); } else { $e['max']=999999999; }
@@ -284,7 +284,7 @@ use semknox\search\Struct\ProductResult;
 		            } else {
 		                $hv=[];
 		                foreach ($v['valueList'] as $vv) {
-		                    $hv[]=['name'=>"".$vv];
+		                    $hv[]=['value'=>"".$vv];
 		                }
 		                $e['values']=$hv;
 		                $f[]=$e;
