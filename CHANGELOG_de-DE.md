@@ -1,3 +1,6 @@
+#3.1.4
+fix: switched name to value on filter-request
+
 #3.1.3
 fix: changed underscore to tilde on propertyfilter
 
