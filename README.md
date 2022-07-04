@@ -22,6 +22,26 @@ Now the plugin is configured and ready for use. For the upload of the data, a cr
 
 This will trigger the cronjob every minute and keep a continuous log file under Shopware's own /var/log directory. Once the cronjob has run once and all data has been uploaded, the upload pauses for 24h so that one upload per day takes place.
 
+***
+Questions:
+
+Q: When gets a product uploaded to the API?
+
+A: The upload process for products takes place in 2 stages:
+
+1. Collect the currently available products
+2. JSON creation of the individual product data
+
+Stage 1: the criteria for a product to get uploaded in this stage are:
+
+* all products that belong to the respective sales channel
+* it needs to be active
+* and those, that are not on sale (Abverkauf), or - if they are on sale - still have the required minimum sales quantity in stock.
+
+These filters are applied directly by the plugin via a SQL query
+
+Stage 2: After the actual JSON data was created per product, at the end it is evaluated whether an URL is available for the product and whether it is valid. If not, the product will not be uploaded.
+
 
 ***
 CALLBACKS:
