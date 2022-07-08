@@ -574,6 +574,44 @@ use semknox\search\Struct\ProductResult;
 	       if (empty($this->lastJsonLogFile)) { return; }
 	       file_put_contents($this->lastJsonLogFile."err.js", $json);
 	   }
+	   public function deleteOldCatData(int $lastUpdateTime=0) {
+	       $data=array();$params=array('urlPattern'=>'.*');
+           if ($lastUpdateTime) {
+               $params['lastUpdateTimeBefore'] = ($lastUpdateTime - 600)*1000;
+           }
+	       $q = $this->base."content";
+	       $ret = $this->call($q, self::METHODE_DELETE, $params, $data);
+	       $ret['resultText']='';
+	       switch(strtolower($ret['status'])) {
+	           case 'success' :
+	               $ret['resultCode']=1;
+	               $ret['resultText']="Kategoriedaten wurden verarbeitet\n";
+	               break;
+	           default: $ret['resultCode']=-1;
+	       }
+	       return $ret;
+	   }
+	   public function sendCatDatav3($inpdata) {
+	       $data=array();$params=array();
+	       $updateStart=time();
+	       $ip = array_chunk($inpdata,100);
+	       unset($inpdata);
+	       foreach ($ip as $ipdata) {
+	           $json=json_encode($ipdata);
+	           $q = $this->base."content";
+	           $ret = $this->call($q, self::METHODE_POST, $params, $data, $json);
+	           $ret['resultText']='';
+	           switch(strtolower($ret['status'])) {
+	               case 'success' :
+	                   $ret['resultCode']=1;
+	                   $ret['resultText']="Kategoriedaten wurden verarbeitet\n";
+	                   break;
+	               default: $ret['resultCode']=-1;
+	           }
+	       }
+           $this->deleteOldCatData($updateStart);
+	       return $ret;
+	   }
 	}
-	/**Ende Klasse Semknox */	
+	/**Ende Klasse SemknoxBaseApi */	
 ?>

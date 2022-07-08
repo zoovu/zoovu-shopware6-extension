@@ -1,3 +1,6 @@
+#3.2.1 
+added upload of category-data to SiteSearch360 at the end of the upload-process
+
 #3.1.4
 fix: switched name to value on filter-request
 

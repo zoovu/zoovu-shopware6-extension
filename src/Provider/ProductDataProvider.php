@@ -3,6 +3,7 @@ namespace semknox\search\Provider;
 use Shopware\Core\Defaults;
 use Shopware\Core\Content\Product\ProductCollection;
 use Shopware\Core\Content\Product\ProductEntity;
+use Shopware\Core\Content\Category\CategoryEntity;
 use Shopware\Core\Content\Seo\SeoUrlPlaceholderHandlerInterface;
 use Throwable;
 use semknox\search\Struct\Product;
@@ -13,6 +14,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\NotFilter;
 use Shopware\Core\System\SalesChannel\Aggregate\SalesChannelDomain\SalesChannelDomainCollection;
 use Shopware\Core\System\SalesChannel\Entity\SalesChannelRepositoryInterface;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
+use Shopware\Core\System\SalesChannel\SalesChannelEntity;
 use semknox\search\Framework\SemknoxsearchHelper;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
@@ -20,6 +22,7 @@ use Shopware\Core\Framework\Adapter\Translation\Translator;
 use Shopware\Administration\Snippet\SnippetFinderInterface;
 use Symfony\Component\Routing\RouterInterface;
 use Shopware\Core\Checkout\Cart\Price\Struct\PriceCollection;
+use Shopware\Core\Content\Category\CategoryDefinition;
 use Shopware\Core\Content\Product\Aggregate\ProductConfiguratorSetting\ProductConfiguratorSettingEntity;
 use Shopware\Core\Content\Property\PropertyGroupCollection;
 use Shopware\Core\Content\Property\Aggregate\PropertyGroupOption\PropertyGroupOptionCollection;
@@ -274,6 +277,40 @@ class ProductDataProvider implements ProductProviderInterface
         $this->semknoxSearchHelper->logData(100, 'getProductData.finished: '.$nOT, ['cproducts'=>count($products), 'nextOffset'=>$nOT]);
         return new ProductResult($products, $nextOffset);
     }
+    /**
+     * {@inheritdoc}
+     */
+    public function getCategoryData(SalesChannelContext $salesChannelContext) : array {
+        $criteria = new Criteria();
+        $criteria->setLimit(500000);
+        $cats = $this->categoryRepository->search($criteria, $salesChannelContext)->getEntities();
+        $ret=[];
+        /** @var CategoryEntity $cat*/
+        foreach($cats as $cat) {
+            if (!$cat->getActive()) { continue; }
+            if (is_null($cat->getParentId())) { continue; }
+            if ($cat->getType() !== CategoryDefinition::TYPE_PAGE) {
+                continue;
+            }
+            $img = '';
+            $media = $cat->getMedia();
+            if ($media) {
+                $img = $media->getUrl();
+                $img = $this->encodeMediaUrl($img);
+            }
+            $a=array('resultGroup'=>'Kategorien', 'boost'=>'', 'imageUrl'=>'', 'url'=>'', 'title'=>'', 'content'=>'', 'dataPoints'=>[]);
+            $d=['key'=> 'categoryId', 'value' => $cat->getId(), 'show' => true ];
+            $a['dataPoints'][]=$d;
+            $a['title'] = $cat->getName();
+            $a['url'] = $this->getCatURL($cat, $salesChannelContext->getSalesChannel());
+            $a['imageUrl'] = $img;
+            if ($cat->getDescription()) {
+                $a['content'] = $cat->getDescription();
+            }
+            $ret[] = $a;
+        }
+        return $ret;
+    }
     private function getInpProducts(SalesChannelContext $salesChannelContext, int $limit, ?int $offset): ProductCollection
     {
         $productsCriteria = new Criteria();
@@ -381,6 +418,53 @@ class ProductDataProvider implements ProductProviderInterface
         			$ret = $seoRet; 
         		}
         	}
+        }
+        return $ret;
+    }
+    private function getCatURL(CategoryEntity $category, ?SalesChannelEntity $salesChannel) : string
+    {
+        $linkType = $category->getTranslation('linkType');
+        $internalLink = $category->getTranslation('internalLink');
+        if ($category->getType() === CategoryDefinition::TYPE_FOLDER) {
+            return '';
+        }
+        if ($category->getType() !== CategoryDefinition::TYPE_LINK) {
+            $linkType = CategoryDefinition::LINK_TYPE_CATEGORY;
+            $internalLink = $category->getId();
+        }
+        $ret='';
+        if (!$internalLink && $linkType && $linkType !== CategoryDefinition::LINK_TYPE_EXTERNAL) {
+            return $ret;
+        }
+        switch ($linkType) {
+            case CategoryDefinition::LINK_TYPE_PRODUCT:
+                $ret = $this->seoUrlPlaceholderHandler->generate('frontend.detail.page', ['productId' => $internalLink]);
+                break;
+            case CategoryDefinition::LINK_TYPE_CATEGORY:
+                if ($salesChannel !== null && $internalLink === $salesChannel->getNavigationCategoryId()) {
+                    $ret =  $this->seoUrlPlaceholderHandler->generate('frontend.home.page');
+                } else {
+                    $ret = $this->seoUrlPlaceholderHandler->generate('frontend.navigation.page', ['navigationId' => $internalLink]);
+                }
+                break;
+            case CategoryDefinition::LINK_TYPE_LANDING_PAGE:
+                $ret =  $this->seoUrlPlaceholderHandler->generate('frontend.landing.page', ['landingPageId' => $internalLink]);
+                break;
+            case CategoryDefinition::LINK_TYPE_EXTERNAL:
+            default:
+                $ret = $category->getTranslation('externalLink');
+        }
+        if (is_null($ret)) { $ret=''; return $ret; }
+        $seoPath = $ret;
+        $ret = $this->host.$ret;
+        if (!empty(trim($seoPath))) {
+            $seoRet = $this->seoUrlPlaceholderHandler->replace($seoPath, $this->host, $this->salesChannelContext);
+            if (!empty(trim($seoRet))) {
+                $h=parse_url($seoRet);
+                if (!empty($h['scheme'])) {
+                    $ret = $seoRet;
+                }
+            }
         }
         return $ret;
     }

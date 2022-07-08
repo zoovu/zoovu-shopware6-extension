@@ -277,6 +277,9 @@ class FullUpdateCommand extends Command
                 }
                 $this->helper->logData(100, 'update.nextBlockStart',$additional);
                 $result = $this->semknoxExporter->generate($salesChannelContext, true, $message->getLastProvider(), $message->getNextOffset(), $this->preferences['semknoxUpdateBlocksize']);
+                if ($result->isFinish()) {
+                    $catResult = $this->semknoxExporter->generateCategoriesData($salesChannelContext);
+                }
                 $additional=['usData' => ['scID'=>$result->getLastSalesChannelId(), 'langID'=>$result->getLastLanguageId(), 'domainID' => $this->helper->getDomainFromSCContextExt($salesChannelContext), 'provider'=> $result->getProvider(), 'offset'=>$result->getOffset(), 'finished'=>$result->isFinish()]];
                 $this->helper->logData(100, 'update.nextBlockFin',$additional);
             } catch (AlreadyLockedException $exception) {

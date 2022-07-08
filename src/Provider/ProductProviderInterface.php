@@ -6,4 +6,5 @@ interface ProductProviderInterface
 {
     public function getName(): string;
     public function getProductData(SalesChannelContext $salesChannelContext, int $limit, ?int $offset = null): ProductResult;
+    public function getCategoryData(SalesChannelContext $salesChannelContext) : array;
 }

@@ -138,6 +138,19 @@ class semknoxExporter implements semknoxExporterInterface
             $domainID
             );
     }
+    public function generateCategoriesData(SalesChannelContext $salesChannelContext): int
+    {
+        $ret=0;
+        $catData=[];
+        /** @var ProductProviderInterface $productProvider */
+        $productProvider = $this->getProductProvider('product');
+        $catData = $productProvider->getCategoryData($salesChannelContext);
+        $scID=$salesChannelContext->getSalesChannel()->getId();
+        $langID=$salesChannelContext->getSalesChannel()->getLanguageId();
+        $domainID=$this->semknoxSearchHelper->getDomainFromSCContextExt($salesChannelContext);
+        $ret = $this->ExportCategories($catData, $scID, $langID, $domainID);
+        return $ret;
+    }
     private function lock(SalesChannelContext $salesChannelContext): bool
     {
         $cacheKey = $this->generateCacheKeyForSalesChannel($salesChannelContext);
@@ -214,7 +227,34 @@ class semknoxExporter implements semknoxExporterInterface
         }
         return $path;
     }
-    /**
+    private function ExportCategories(array $catData, string $scID, string $langID, string $domainID) : int
+    {
+        $ret = 1;
+        $mainConfig = $this->semknoxSearchHelper->getMainConfigParams($scID, $domainID);
+        if ( (is_array($catData)) && (!empty($catData)) ) {
+            $api = new semknoxBaseApi($mainConfig['semknoxBaseUrl'], $mainConfig['semknoxCustomerId'],
+                    $mainConfig['semknoxApiKey'], "updateSessionID");
+            $api->addHeaderInfoData($this->semknoxSearchHelper->getHeaderInfoData());
+            $api->setLogPath($this->add_ending_slash($this->logDir) . 'semknox');
+            $this->semknoxSearchHelper->logData(1, 'siteSearch360: start sending catData -');
+            $ret = -21;
+            sleep(1);
+            $res = $api->sendCatDatav3($catData);
+            $logt = $res['status'];
+            if (isset($res['resultText'])) {
+                $logt .= '##' . $res['resultText'];
+            }
+            $this->semknoxSearchHelper->logData(10, 'update.send.cat', ['updateSendData' => $res]);
+            if ($res['status'] < 0) {
+                $ret = -22;
+                return $ret;
+            } else {
+                $ret = 1;
+            }
+        }
+        return $ret;
+    }
+        /**
      * sending data to sitesearch-server
      * if offset > 0 no starting-signal will be sent
      * is finish <> true no finish-signal will b sent
