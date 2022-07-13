@@ -241,7 +241,7 @@ class ProductDataProvider implements ProductProviderInterface
                 $newProduct->setMainProductId($inpProduct->getParentId());                
                 $newProduct->setURL($this->getURL($inpProduct));
                 $variantOptions = $this->loadSettings($inpProduct, $salesChannelContext);
-                $newProduct->setProperties($this->getProperties($inpProduct, $variantOptions));
+                $newProduct->setProperties($this->getProperties($salesChannelContext, $inpProduct, $variantOptions));
                 if (isset($this->salesCountList[$id])) { $newProduct->setSalesCount(intval($this->salesCountList[$id]['count'])); }
                 if (isset($this->productReviewList[$id])) { 
                     $newProduct->setVotesCount(intval($this->productReviewList[$id]['count']));
@@ -643,7 +643,23 @@ class ProductDataProvider implements ProductProviderInterface
         }
         return '';
     }
-    private function getProperties(ProductEntity $product, ?array $variantOptions) : array
+    /**
+     * returns Collection of master-product-data
+     * @param SalesChannelContext $salesChannelContext
+     * @param string $id
+     * @return ProductCollection
+     */
+    private function getMasterProductData(SalesChannelContext $salesChannelContext, string $id): ProductCollection
+    {
+        $productsCriteria = new Criteria();
+        $ids=[];
+        $ids[]=strtolower($id);
+        $productsCriteria->addFilter(new EqualsAnyFilter('id', $ids));
+        /** @var ProductCollection $products */
+        $products = $this->productRepository->search($productsCriteria, $salesChannelContext)->getEntities();
+        return $products;
+    }
+    private function getProperties(SalesChannelContext $salesChannelContext, ProductEntity $product, ?array $variantOptions) : array
     {
         $ret=[];
         $tid=$this->curLocale.".snippets.sw-product.settingsForm.labelWidth";  if (isset($this->transList[$tid])) { $ename = ($this->transList[$tid]); } else { $ename = 'width'; }
@@ -709,6 +725,17 @@ class ProductDataProvider implements ProductProviderInterface
                 }
                 if (count($csVals)>0) {
                     $ret['customSearchKeywords']=['name'=>'customSearchKeywords', 'values'=>$csVals];                   
+                }
+            }
+        }
+        if ($product->getParentId()) {
+            $masterlist = $this->getMasterProductData($salesChannelContext, $product->getParentId());
+            if ($masterlist) {
+                $master = $masterlist->first();
+                if ($master) {
+                    $pm = $master->get('productNumber');
+                    $id="MasterProductNumber";
+                    $ret[$id]=['name'=>$id, 'values'=>[['id'=>$pm, 'name'=>$pm]]];
                 }
             }
         }

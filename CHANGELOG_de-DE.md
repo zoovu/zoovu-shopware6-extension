@@ -1,3 +1,6 @@
+#3.2.3
+added MasterProductnumber to variants as first part of masterdata at variant-childs
+
 #3.2.1 
 added upload of category-data to SiteSearch360 at the end of the upload-process
 
