@@ -123,6 +123,7 @@ class siteSearchEntitySearcher
                     'filterData' => [],
                     'customResults' => [],
                     'redirect' => $result->getRedirect(),
+                    'useSearchTemplate' => 0,
                     'jsonDecoded' => $result->getDecodedJson()
                 ]
                 ));
@@ -137,6 +138,7 @@ class siteSearchEntitySearcher
                     'filterData' => [],
                     'customResults' => [],
                     'useInternalSearch' => $result->getUseInternalSearch(),
+                    'useSearchTemplate' => 0,
                     'jsonDecoded' => $result->getDecodedJson()
                 ]
                 ));
@@ -153,7 +155,19 @@ class siteSearchEntitySearcher
         if (isset($rm['countHTML'])) { $c+=$rm['countHTML']; }
         if ($c==0) { $useSearchTemplate=0; }
         if ( (count($hits) <= 0) && ($useSearchTemplate==0) ) {
-            return new IdSearchResult(0, [], $criteria, $context);
+            $res =  new IdSearchResult(0, [], $criteria, $context);
+            $res->addExtension('semknoxResultData', new ArrayEntity(
+                [
+                    'metaData' => $result->getSearchMetadata(),
+                    'sortData' => [],
+                    'filterData' => [],
+                    'customResults' => [],
+                    'useInternalSearch' => $result->getUseInternalSearch(),
+                    'useSearchTemplate' => $useSearchTemplate,
+                    'jsonDecoded' => $result->getDecodedJson()
+                ]
+            ));
+            return $res;
         }
         $data = [];
         foreach ($hits as $hit) {

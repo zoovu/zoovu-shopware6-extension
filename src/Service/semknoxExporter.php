@@ -123,9 +123,6 @@ class semknoxExporter implements semknoxExporterInterface
             $nextProvider = $this->getNextProductProvider($productProvider->getName());
             $lastProvider = $nextProvider ? $nextProvider->getName() : null;
         }
-        if ($finish) {
-            $this->unlock($salesChannelContext);
-        }
         $res=['finish'=>$finish, 'offset'=>$productResult->getNextOffset(), 'channelID'=>$salesChannelContext->getSalesChannel()->getId(), 'langID'=>$salesChannelContext->getSalesChannel()->getLanguageId(), 'domainID'=>$domainID];
         $this->semknoxSearchHelper->logData(10, 'generateupdate', ['genData'=>$res]);
         $this->ExportProducts($productResult, $offset, $finish, $scID, $langID, $domainID);

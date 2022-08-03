@@ -375,6 +375,9 @@ class SemknoxsearchHelper
         $domainID = $this->getDomainFromSCContext($context);
         $contr=$request->attributes->get('_controller');
         if (is_null($definition)) { $definition = $this->productDefinition; }
+        if (is_null($contr)) { return false; }
+        if (is_null($domainID)) { return false; }
+        if (is_null($scID)) { return false; }
         $mainConfig=$this->allowCatListing($definition, $context->getContext(), $scID, $domainID, $contr);
         if ($mainConfig===null) {
             return false;
@@ -845,13 +848,28 @@ class SemknoxsearchHelper
             return $ret;
         }
         $domain = $domData->getVars();
-        if ( (!is_array($domain)) || (!is_array($domain['data']['data'])) ) {
+        if ( (!is_array($domain)) || (!isset($domain['data']))   ) {
             return $ret;
         }
-        if (isset($domain['data']['data']['domainId'])) {
-            $ret=$domain['data']['data']['domainId'];
+        $data = [];
+        if (isset($domain['data']['data'])) {
+            if (!is_array($domain['data']['data'])) {
+                return $ret;
+            }
+            $data=$domain['data']['data'];
+        } else {
+            if (isset($domain['data'])) {
+                if (!is_array($domain['data'])) {
+                    return $ret;
+                }
+                $data=$domain['data'];
+            }
         }
-        return $ret;            
+        if (empty($data)) { return $ret; }
+        if (isset($data['domainId'])) {
+            $ret=$data['domainId'];
+        }
+        return $ret;
     }
     public function getDomainURLFromSCContext(SalesChannelContext $context) : string
     {
@@ -993,8 +1011,9 @@ class SemknoxsearchHelper
          return version_compare($shopwareVersion, $version, $compare);
      }
     private function setSessionID($request) {
-        if (null !==$request->getSession()) {
-            $this->sessionId = $request->getSession()->get('sessionId') ;
+        $session = $request->hasSession() ? $request->getSession() : null;
+        if (!is_null($session)) {
+            $this->sessionId = $session->get('sessionId') ;
         }
     }
     public function getCurrentSessionId() : string {

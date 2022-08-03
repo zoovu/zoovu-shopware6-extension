@@ -1,3 +1,9 @@
+#3.2.7
+bugfix, if another plugin uses the SalesChannelCmsPageLoader and the request->controller or any necessary variable is not set.
+
+#3.2.5
+changes to fix some issues with missing resultsets, unset sessions in checkout-process in other plugins and possible re-indexing after update-procedures
+
 #3.2.3
 added MasterProductnumber to variants as first part of masterdata at variant-childs
 
