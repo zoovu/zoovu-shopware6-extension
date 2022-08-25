@@ -987,15 +987,12 @@ class SemknoxsearchHelper
         if (class_exists('Composer\InstalledVersions', false) === false) {
             return self::getShopwareVersion_compo1();
         }
-        if (InstalledVersions::isInstalled('shopware/platform')) {
-            $shopwareVersion = InstalledVersions::getVersion('shopware/platform')
-            . '@' . InstalledVersions::getReference('shopware/platform');
+        if (InstalledVersions::isInstalled('shopware/core')) {
+            $shopwareVersion = InstalledVersions::getVersion('shopware/core');
         } else {
-            $shopwareVersion = InstalledVersions::getVersion('shopware/core')
-            . '@' . InstalledVersions::getReference('shopware/core');
+            $shopwareVersion = InstalledVersions::getVersion('shopware/platform');
         }
         $shopwareVersion = ltrim($shopwareVersion, 'v');
-        $shopwareVersion = substr($shopwareVersion, 0, strpos($shopwareVersion, '@'));
         return $shopwareVersion;
     }
     /**
