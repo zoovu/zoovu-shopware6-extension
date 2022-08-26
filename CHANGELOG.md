@@ -1,3 +1,6 @@
+#3.2.9
+removed getReference and changed order of version-getter-functions
+
 #3.2.7
 bugfix, if another plugin uses the SalesChannelCmsPageLoader and the request->controller or any necessary variable is not set.
 
