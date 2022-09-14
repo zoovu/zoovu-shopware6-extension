@@ -127,9 +127,13 @@ class ProductDataProvider implements ProductProviderInterface
             $h=$this->semknoxSearchHelper->getQueryResult($query);
             file_put_contents($prodsfile, json_encode($h));
             $this->maxProducts = count($h);
-            $this->allProdsList = array_slice($h, $offset, $limit);
         } catch (\Throwable $t) {
             $this->semknoxSearchHelper->logData(1, 'productDataProvider.genAllProdsList.ERROR', ['msg'=>$t->getMessage(), 'prodsfile'=>$prodsfile], 500);            
+        }
+        try {
+            $this->semknoxSearchHelper->uploadblocks_generate($this->maxProducts, $limit, $salesChannelContext);
+        } catch (\Throwable $t) {
+            $this->semknoxSearchHelper->logData(1, 'productDataProvider.genAllProdsListBlocks.ERROR', ['msg'=>$t->getMessage(), 'prodsfile'=>$prodsfile], 500);
         }
     }
     private function getAllProdsList($prodsfile, $offset, $limit)
@@ -174,13 +178,19 @@ class ProductDataProvider implements ProductProviderInterface
         $nf="/var/www/stage.stoxxparts.com/var/log/semknox/allprod_".$offset."_".$limit.".js";
         */
         $np="";
-        if (!empty($logPath)) { $np = $logPath.'allprods.json'; }
-        if ( (empty($offset)) && (file_exists($np)) ) { unlink($np); }        
+        $np = $this->semknoxSearchHelper->uploadblocks_getproductfilename($salesChannelContext);
         if (!file_exists($np)) {
+            $ot=time();
             $this->genAllProdsList($salesChannelContext, $np, $offset, $limit);
+            $this->semknoxSearchHelper->uploadblocks_setBlockStatusBySC($salesChannelContext,-1,1, '', $ot);
+            $this->semknoxSearchHelper->uploadblocks_setBlockStatusBySC($salesChannelContext,-1,100);
+            return new ProductResult([], 0);
         } else {
             $this->getAllProdsList($np, $offset, $limit);
         }
+        $this->semknoxSearchHelper->uploadblocks_setBlockStatusBySC($salesChannelContext,$offset,1);
+        $blockstatus = 100;
+        $blockerror = '';
         $this->semknoxSearchHelper->logData(100, 'getProductData.start '.$offset.'/'.$this->maxProducts, ['cap'=>count($this->allProdsList)]);
         $inpProducts = $this->getInpProducts($salesChannelContext, $limit, $offset);
         $this->salesChannelContext = $salesChannelContext;
@@ -253,6 +263,8 @@ class ProductDataProvider implements ProductProviderInterface
                 */
             } catch (\Throwable $t) {
                 $this->semknoxSearchHelper->logData(100, 'productDataProvider.getProductData.ERROR', ['msg'=>$t->getMessage()]);
+                $blockstatus = -1;
+                $blockerror .= 'product-gen-error for id: '.$id.':::'.$t->getMessage()."\n";
             }
 /*
             var_dump($inpProduct->get('productNumber'));
@@ -275,6 +287,7 @@ class ProductDataProvider implements ProductProviderInterface
             $nOT=$nextOffset;
         }
         $this->semknoxSearchHelper->logData(100, 'getProductData.finished: '.$nOT, ['cproducts'=>count($products), 'nextOffset'=>$nOT]);
+        $this->semknoxSearchHelper->uploadblocks_setBlockStatusBySC($salesChannelContext, $offset, $blockstatus, $blockerror);
         return new ProductResult($products, $nextOffset);
     }
     /**
@@ -283,6 +296,8 @@ class ProductDataProvider implements ProductProviderInterface
     public function getCategoryData(SalesChannelContext $salesChannelContext) : array {
         $criteria = new Criteria();
         $criteria->setLimit(500000);
+        $this->salesChannelContext = $salesChannelContext;
+        $this->host = $this->getHost($salesChannelContext);
         $cats = $this->categoryRepository->search($criteria, $salesChannelContext)->getEntities();
         $ret=[];
         /** @var CategoryEntity $cat*/

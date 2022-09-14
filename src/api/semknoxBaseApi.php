@@ -153,10 +153,6 @@ use semknox\search\Struct\ProductResult;
         protected function prepareResponse($result, $httpCode) {
     	$this->resultCode=0;
         $this->logdata.="<h2>HTTP: $httpCode</h2>\n";
-        if ($httpCode <> 200) {
-            $this->resultCode = -1;
-            return $this->getCallResult(-1, 'httpcode of call is '.$httpCode, null, $httpCode, 0);
-        }
         if (is_null($result)) {
             $this->resultCode = -1;            
             return $this->getCallResult(-1, 'result of call is null', null, $httpCode, 1);
@@ -172,7 +168,11 @@ use semknox\search\Struct\ProductResult;
             $m = "HTTP-Code: ".$httpCode;
             return $this->getCallResult(-1, 'error in json-decode of call result: '.$m, null, $httpCode, 1);
         }
-        if ($this->debugMode>10000) {            
+        if ($httpCode <> 200) {
+            $this->resultCode = -1;
+            return $this->getCallResult(-1, 'httpcode of call is '.$httpCode, $decodedResult, $httpCode, 0);
+        }
+        if ($this->debugMode>10000) {
             echo "\n semknox:resultsAvailable:".$decodedResult['resultsAvailable'];
             echo "\n semknox:limit:".$decodedResult['limit'];
             echo "\n semknox:searchResults:".count($decodedResult['searchResults']);
@@ -389,6 +389,20 @@ use semknox\search\Struct\ProductResult;
 			$ret = $this->call($q, self::METHODE_DELETE, $params);		
 			return $ret;
 		}
+        /**
+         * generates the array to return after a call to the api
+         * ret['status'] : integer = 1 (success) <=0 else
+         * ret['statusRet'] : string = returned statement of api for status, if no json, then ''
+         * ret['resultCode'] : integer = same as status
+         * ret['resultText'] : string = returned statement of api extended bei json-content, if existing
+         * ret['message'] : string = returned statement of api extended bei json-content, if existing
+         * @param $status
+         * @param $resultText
+         * @param $jsondec
+         * @param $httpResult
+         * @param $useInternal
+         * @return array|null
+         */
 		function getCallResult($status = -1, $resultText = '', $jsondec=null, $httpResult=0, $useInternal=0) {
 		    $ret=['status' => $status, 'resultCode'=>$status, 'resultText' => $resultText, 'message' => $resultText, 'httpResult'=>0, 'useInternalSearch'=>0, 'jsonDecoded'=>$jsondec];
 		    $ret['httpResult']=intval($httpResult);
@@ -402,7 +416,7 @@ use semknox\search\Struct\ProductResult;
 		        $ret = array_merge($ret,$jsondec);
 		        if (isset($jsondec['status'])) {
 		            $ret['statusRet'] = $jsondec['status'];
-		            if (strtolower($ret['statusRet'])=='success') { 
+		            if (strtolower($ret['statusRet'])=='success') {
 		                $ret['status'] = 1; 
 		            } else {
 		                $ret['status']=-1;
@@ -410,14 +424,20 @@ use semknox\search\Struct\ProductResult;
 		            }
 		            $ret['resultCode']=$ret['status'];
 		            if ( ($ret['status']< 0) && (isset($jsondec['validation'])) ) {
+                        $ret['validation'] = $jsondec['validation'];
 		                if ( (is_array($jsondec['validation'])) && (isset($jsondec['validation'][0])) && (isset($jsondec['validation'][0]['errors'])) )
-		                    $ret['resultCode'] .= "validation-error: ".implode("..",$jsondec['validation'][0]['errors']);
+		                    $ret['message'] .= " ## validation-error: ".implode("..",$jsondec['validation'][0]['errors']);
 		            }
 		        }
-		        $ret['message']='HTTP: '.$status;
+		        $ret['message'] .= ' ### HTTP: '.$ret['httpResult'];
 		        if (isset($jsondec['message'])) {
-		            $ret['message'] .= " ## ".$jsondec['message'];
+		            $ret['message'] .= " ### ".$jsondec['message'];
 		        }
+                if (isset($jsondec['data'])) {
+                    if (isset($jsondec['data']['message'])) {
+                        $ret['message'] .= " ### " . $jsondec['data']['message'];
+                    }
+                }
 		        $ret['resultText']=$ret['message'];
 		        if ( (isset($jsondec['task'])) && (is_array($jsondec['task'])) ) {
 		            if (isset($jsondec['task']['id'])) {

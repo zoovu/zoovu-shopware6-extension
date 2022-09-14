@@ -1,3 +1,7 @@
+# 3.3.0
+parallel upload-functionality
+saleschanneldomainID fix for empty return-values
+
 #3.2.9
 removed getReference and changed order of version-getter-functions
 

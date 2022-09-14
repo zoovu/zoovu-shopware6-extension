@@ -122,10 +122,12 @@ class FullUpdateCommand extends Command
                     $domainID = $startData['usData']['domainID'];
                     $this->semknoxExporter->resetUpload($scID, $langID, $domainID);
                 }
+                $this->helper->uploadblocks_resetFile();
+                $this->helper->uploadblocks_resetAllProductDataFiles();
                 $additional=['usData' => ['error'=>'update canceled - no action for '.$lastUpdate.' seconds', 'scID'=>$scID, 'langID'=>$langID, 'domainID'=>$domainID, 'provider'=> '', 'offset'=>0, 'cancel'=>'yes', 'lastUpdate'=>$lastUpdate]];
                 $this->helper->logData(100, 'update.finished', $additional);
             } else {
-                $runData = $this->getCurrentRunning();
+                $runData = $this->helper->uploadblocks_startNextBlock();
                 if ( (!empty($runData)) && (isset($runData['usData'])) && (isset($runData['usData']['scID']))  && (isset($runData['usData']['langID']))  && (isset($startData['usData']['domainID'])) ) {
                     $scID = $runData['usData']['scID'];
                     $langID = $runData['usData']['langID'];
@@ -153,9 +155,13 @@ class FullUpdateCommand extends Command
                         }
                     }
                 }
+                $this->helper->uploadblocks_resetFile();
+                $this->helper->uploadblocks_resetAllProductDataFiles();
             }
         }
-        $this->resetRestartFile();        
+        $this->resetRestartFile();
+        $this->helper->uploadblocks_resetFile();
+        $this->helper->uploadblocks_resetAllProductDataFiles();
         $this->generateData(new semknoxFUData(null, null, null, null, null, false));
         return 0;
     }
@@ -253,12 +259,29 @@ class FullUpdateCommand extends Command
         }
         return $ret;
     }
+    public function getCurrentRunningFile() : array
+    {
+        $lastentries = $this->helper->getQueryResult("SELECT logtype, status, logdescr, created_at from semknox_logs WHERE logtype like 'update.%' order by created_at desc LIMIT 1");
+        $ret=[];
+        foreach ($lastentries as $ent) {
+            if ($ent['logtype']=='update.nextBlockFin') {
+                if (!empty($ent['logdescr'])) {
+                    $ret = json_decode($ent['logdescr'], true);
+                    $ret['time'] = strtotime($ent['created_at']);
+                }
+            }
+            break;
+        }
+        return $ret;
+    }
     private function generateData(semknoxFUData $message): void
     {
         $this->helper->setLogRepository($this->logRepository);
+        $this->helper->uploadblocks_checkStatus();
         $salesChannelContext = $this->getSalesChannelContext($message);
         if (!($salesChannelContext instanceof SalesChannelContext)) {
             $this->helper->logData(100, 'update.finished');
+            $this->helper->uploadblocks_setBlockStatus('','', -1000, 100);
             return;
         }
         $mainConfig = $this->helper->allowSalesChannel($salesChannelContext->getSalesChannel()->getId(), $this->helper->getDomainFromSCContextExt($salesChannelContext), 1);
@@ -267,6 +290,26 @@ class FullUpdateCommand extends Command
             $this->generateData($newMessage);
         } else {
             try {
+                if ( ($message->isFinished()) && ($message->getNextOffset()==10000000000) ) {
+                    $ret = $this->semknoxExporter->finishUpdate($salesChannelContext);
+                    if ($ret['status'] > 0) {
+                        $this->helper->uploadblocks_setBlockStatusBySC($salesChannelContext, 10000000000, 2);
+                        $this->helper->logData(100, 'update.sentUpdateInit', []);
+                    } else {
+                        $this->helper->uploadblocks_setBlockStatusBySC($salesChannelContext, 10000000000, 0, 'unknown error: '.$ret['resultText']);
+                        $this->helper->logData(100, 'update.sentUpdateInit.Error', $ret);
+                        return;
+                    }
+                    $catResult = $this->semknoxExporter->generateCategoriesData($salesChannelContext, $message->getLastProvider(), $message->getNextOffset(), $this->preferences['semknoxUpdateBlocksize']);
+                    if ($catResult['status'] > 0) {
+                        $this->helper->uploadblocks_setBlockStatusBySC($salesChannelContext, 10000000000, 100);
+                        $this->helper->logData(100, 'update.sentCatData', []);
+                    } else {
+                        $this->helper->uploadblocks_setBlockStatusBySC($salesChannelContext, 10000000000, 0, 'error: '.$catResult['resultText']);
+                        $this->helper->logData(100, 'update.sentCatData.Error', $catResult);
+                    }
+                    return;
+                }
                 if ($this->firstStart) {
                     $this->helper->logData(100, 'update.process.start',[]);
                     $this->firstStart=0;
@@ -277,9 +320,6 @@ class FullUpdateCommand extends Command
                 }
                 $this->helper->logData(100, 'update.nextBlockStart',$additional);
                 $result = $this->semknoxExporter->generate($salesChannelContext, true, $message->getLastProvider(), $message->getNextOffset(), $this->preferences['semknoxUpdateBlocksize']);
-                if ($result->isFinish()) {
-                    $catResult = $this->semknoxExporter->generateCategoriesData($salesChannelContext);
-                }
                 $additional=['usData' => ['scID'=>$result->getLastSalesChannelId(), 'langID'=>$result->getLastLanguageId(), 'domainID' => $this->helper->getDomainFromSCContextExt($salesChannelContext), 'provider'=> $result->getProvider(), 'offset'=>$result->getOffset(), 'finished'=>$result->isFinish()]];
                 $this->helper->logData(100, 'update.nextBlockFin',$additional);
             } catch (AlreadyLockedException $exception) {
@@ -307,7 +347,8 @@ class FullUpdateCommand extends Command
     }
     private function getSalesChannelContext(semknoxFUData $message)
     {
-        if ( ($message->isFinished() === false) && ($message->getLastSalesChannelId() !== null) ) {
+        if ( (($message->isFinished() === false) && ($message->getLastSalesChannelId() !== null) ) ||
+             (($message->isFinished() === true) && ($message->getNextOffset()==10000000000)) ) {
             $this->helper->logData(1, 'woso_continue with last used saleschannel ' . $message->getLastSalesChannelId() . ' ' . $message->getLastLanguageId() . ' '. $message->getLastDomainId());
             $this->isNewSC=0;
             try {
