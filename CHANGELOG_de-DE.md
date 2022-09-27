@@ -1,3 +1,11 @@
+#3.3.2
+added new function to enable/disable content-upload
+fix backend-compile-error on new shopwareVersion-Checking
+fix error-message on wrong filtervalues from server
+
+#3.3.1
+added media-association to include media-urls for category-upload
+
 # 3.3.0
 parallel upload-functionality
 saleschanneldomainID fix for empty return-values

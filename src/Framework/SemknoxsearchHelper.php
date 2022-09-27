@@ -347,7 +347,8 @@ class SemknoxsearchHelper
             'semknoxUpdateCronTime' => 0,
             'semknoxUpdateCronInterval' => 24,
             'semknoxUpdateBlocksize' => 500,
-            'semknoxUpdateUseVariantMaster' => false
+            'semknoxUpdateUseVariantMaster' => false,
+            'semknoxUpdateUploadContent' => true
         ];
         $h = $this->getMainConfigParams('00000000000000000000000000000000', '00000000000000000000000000000000');
         if ((isset ($h['semknoxUpdateCronTime'])) &&
@@ -367,6 +368,9 @@ class SemknoxsearchHelper
         }
         if (isset ($h['semknoxUpdateUseVariantMaster'])) {
             $ret['semknoxUpdateUseVariantMaster'] = $h['semknoxUpdateUseVariantMaster'];
+        }
+        if (isset ($h['semknoxUpdateUploadContent'])) {
+            $ret['semknoxUpdateUploadContent'] = $h['semknoxUpdateUploadContent'];
         }
         $ret['semknoxUpdateCronTimeList'] = [];
         $i = $ret['semknoxUpdateCronTime'];
@@ -1187,11 +1191,17 @@ class SemknoxsearchHelper
         if (class_exists('Composer\InstalledVersions', false) === false) {
             return self::getShopwareVersion_compo1();
         }
+        $usecore=0;
         if (InstalledVersions::isInstalled('shopware/core')) {
+            $usecore=1;
             $shopwareVersion = InstalledVersions::getVersion('shopware/core');
         } else {
             $shopwareVersion = InstalledVersions::getVersion('shopware/platform');
         }
+        if ( ($usecore) && (is_null($shopwareVersion)) ) {
+            $shopwareVersion = InstalledVersions::getVersion('shopware/platform');
+        }
+        if (is_null($shopwareVersion)) { return ''; }
         $shopwareVersion = ltrim($shopwareVersion, 'v');
         return $shopwareVersion;
     }

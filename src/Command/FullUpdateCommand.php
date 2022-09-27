@@ -300,13 +300,21 @@ class FullUpdateCommand extends Command
                         $this->helper->logData(100, 'update.sentUpdateInit.Error', $ret);
                         return;
                     }
-                    $catResult = $this->semknoxExporter->generateCategoriesData($salesChannelContext, $message->getLastProvider(), $message->getNextOffset(), $this->preferences['semknoxUpdateBlocksize']);
-                    if ($catResult['status'] > 0) {
-                        $this->helper->uploadblocks_setBlockStatusBySC($salesChannelContext, 10000000000, 100);
-                        $this->helper->logData(100, 'update.sentCatData', []);
+                    if ($this->preferences['semknoxUpdateUploadContent']) {
+                        $catResult = $this->semknoxExporter->generateCategoriesData($salesChannelContext,
+                            $message->getLastProvider(), $message->getNextOffset(),
+                            $this->preferences['semknoxUpdateBlocksize']);
+                        if ($catResult['status'] > 0) {
+                            $this->helper->uploadblocks_setBlockStatusBySC($salesChannelContext, 10000000000, 100);
+                            $this->helper->logData(100, 'update.sentCatData', []);
+                        } else {
+                            $this->helper->uploadblocks_setBlockStatusBySC($salesChannelContext, 10000000000, 0,
+                                'error: ' . $catResult['resultText']);
+                            $this->helper->logData(100, 'update.sentCatData.Error', $catResult);
+                        }
                     } else {
-                        $this->helper->uploadblocks_setBlockStatusBySC($salesChannelContext, 10000000000, 0, 'error: '.$catResult['resultText']);
-                        $this->helper->logData(100, 'update.sentCatData.Error', $catResult);
+                        $this->helper->logData(100, 'update.CatDataNotSendByConfig', []);
+                        $this->helper->uploadblocks_setBlockStatusBySC($salesChannelContext, 10000000000, 100);
                     }
                     return;
                 }

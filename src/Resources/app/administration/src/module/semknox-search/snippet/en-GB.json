@@ -109,8 +109,12 @@
                 },
                 "updateVariantMaster": {
                 	"label" : "send master-product of variants to search",
-                	"tooltipText": "if you want to be able to list master-products of variants in your listing, set this to true"
+                	"tooltipText": "if you want to be able to list master-products of variants in your listing, set this to true."
                 },
+				"updateUploadContent": {
+					"label" : "upload content data to SiteSearch360",
+					"tooltipText": "If you want to upload the content data via the plugin upload-procedure, set this to true."
+				},
                 "semknoxActivateCategoryListing": {
                 	"label" : "use SiteSearch360-data for category-listings",
                 	"tooltipText": "if you want to use the SiteSearch360-data in your category-listings, set this to true"

@@ -296,6 +296,7 @@ class ProductDataProvider implements ProductProviderInterface
     public function getCategoryData(SalesChannelContext $salesChannelContext) : array {
         $criteria = new Criteria();
         $criteria->setLimit(500000);
+        $criteria->addAssociation('media');
         $this->salesChannelContext = $salesChannelContext;
         $this->host = $this->getHost($salesChannelContext);
         $cats = $this->categoryRepository->search($criteria, $salesChannelContext)->getEntities();
