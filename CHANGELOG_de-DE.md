@@ -1,3 +1,8 @@
+#3.3.3
+added logging to struct/product on error in attributes-handling
+removed currency from product-search-association (only available in saleschannel-context
+changed limit-handling, so the limit is taken from the current run and cant be changed during operation of a whole update-run
+
 #3.3.2
 added new function to enable/disable content-upload
 fix backend-compile-error on new shopwareVersion-Checking

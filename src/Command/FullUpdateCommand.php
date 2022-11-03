@@ -135,8 +135,9 @@ class FullUpdateCommand extends Command
                     $provider = $runData['usData']['provider'];
                     $offset = $runData['usData']['offset'];
                     $finished = $runData['usData']['finished'];
+                    $limit = $runData['usData']['limit'];
                     $this->firstStart=0;
-                    $newMessage = new semknoxFUData($scID, $langID, $domainID, $provider, $offset, $finished);
+                    $newMessage = new semknoxFUData($scID, $langID, $domainID, $provider, $offset, $limit, $finished);
                     $this->resetRestartFile();
                     $this->generateData($newMessage);
                 }
@@ -162,7 +163,7 @@ class FullUpdateCommand extends Command
         $this->resetRestartFile();
         $this->helper->uploadblocks_resetFile();
         $this->helper->uploadblocks_resetAllProductDataFiles();
-        $this->generateData(new semknoxFUData(null, null, null, null, null, false));
+        $this->generateData(new semknoxFUData(null, null, null, null, null, null, false));
         return 0;
     }
     /**
@@ -286,7 +287,7 @@ class FullUpdateCommand extends Command
         }
         $mainConfig = $this->helper->allowSalesChannel($salesChannelContext->getSalesChannel()->getId(), $this->helper->getDomainFromSCContextExt($salesChannelContext), 1);
         if (is_null($mainConfig)) {
-            $newMessage = new semknoxFUData($salesChannelContext->getSalesChannel()->getId(), $salesChannelContext->getSalesChannel()->getLanguageId(),  $this->helper->getDomainFromSCContextExt($salesChannelContext), "", 0, true);
+            $newMessage = new semknoxFUData($salesChannelContext->getSalesChannel()->getId(), $salesChannelContext->getSalesChannel()->getLanguageId(),  $this->helper->getDomainFromSCContextExt($salesChannelContext), "", 0, $this->preferences['semknoxUpdateBlocksize'], true);
             $this->generateData($newMessage);
         } else {
             try {
@@ -327,7 +328,7 @@ class FullUpdateCommand extends Command
                     $this->helper->logData(100, 'update.start',$additional);
                 }
                 $this->helper->logData(100, 'update.nextBlockStart',$additional);
-                $result = $this->semknoxExporter->generate($salesChannelContext, true, $message->getLastProvider(), $message->getNextOffset(), $this->preferences['semknoxUpdateBlocksize']);
+                $result = $this->semknoxExporter->generate($salesChannelContext, true, $message->getLastProvider(), $message->getNextOffset(), $message->getLimit());
                 $additional=['usData' => ['scID'=>$result->getLastSalesChannelId(), 'langID'=>$result->getLastLanguageId(), 'domainID' => $this->helper->getDomainFromSCContextExt($salesChannelContext), 'provider'=> $result->getProvider(), 'offset'=>$result->getOffset(), 'finished'=>$result->isFinish()]];
                 $this->helper->logData(100, 'update.nextBlockFin',$additional);
             } catch (AlreadyLockedException $exception) {

@@ -1,6 +1,7 @@
 <?php declare(strict_types=1);
 namespace semknox\search\Struct;
 use Shopware\Core\Framework\Struct\Struct;
+use semknox\search\Framework\SemknoxsearchHelper;
 class ProductResult extends Struct
 {
     /**
@@ -11,10 +12,16 @@ class ProductResult extends Struct
      * @var int|null
      */
     private $nextOffset;
-    public function __construct(array $products, ?int $nextOffset)
+    /**
+     *
+     * @var SemknoxsearchHelper
+     */
+    private $semknoxSearchHelper;
+    public function __construct(array $products, SemknoxsearchHelper $helper, ?int $nextOffset)
     {
         $this->products = $products;
         $this->nextOffset = $nextOffset;
+        $this->semknoxSearchHelper = $helper;
     }
     /**
      * @return Product[]

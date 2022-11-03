@@ -184,7 +184,7 @@ class ProductDataProvider implements ProductProviderInterface
             $this->genAllProdsList($salesChannelContext, $np, $offset, $limit);
             $this->semknoxSearchHelper->uploadblocks_setBlockStatusBySC($salesChannelContext,-1,1, '', $ot);
             $this->semknoxSearchHelper->uploadblocks_setBlockStatusBySC($salesChannelContext,-1,100);
-            return new ProductResult([], 0);
+            return new ProductResult([], $this->semknoxSearchHelper,  0);
         } else {
             $this->getAllProdsList($np, $offset, $limit);
         }
@@ -202,7 +202,7 @@ class ProductDataProvider implements ProductProviderInterface
         $this->addSnippetsToTransAr($this->snippetFinder->findSnippets($this->curLocale), $this->curLocale);
         /*end translate*/
         $products = [];
-        $product = new Product();
+        $product = new Product($this->semknoxSearchHelper);
         $this->currencyID = $salesChannelContext->getCurrency()->getId();
         $this->getProdCats($salesChannelContext, 5000000, 0);
         $this->getSalesCountList();
@@ -288,7 +288,7 @@ class ProductDataProvider implements ProductProviderInterface
         }
         $this->semknoxSearchHelper->logData(100, 'getProductData.finished: '.$nOT, ['cproducts'=>count($products), 'nextOffset'=>$nOT]);
         $this->semknoxSearchHelper->uploadblocks_setBlockStatusBySC($salesChannelContext, $offset, $blockstatus, $blockerror);
-        return new ProductResult($products, $nextOffset);
+        return new ProductResult($products, $this->semknoxSearchHelper, $nextOffset);
     }
     /**
      * {@inheritdoc}
@@ -331,7 +331,6 @@ class ProductDataProvider implements ProductProviderInterface
     {
         $productsCriteria = new Criteria();
         $productsCriteria->addAssociation('manufacturer');
-        $productsCriteria->addAssociation('currency');
         $productsCriteria->addAssociation('categories');
         $productsCriteria->addAssociation('properties.group');
         /*
