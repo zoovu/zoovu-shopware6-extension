@@ -115,6 +115,10 @@
 					"label" : "upload content data to SiteSearch360",
 					"tooltipText": "If you want to upload the content data via the plugin upload-procedure, set this to true."
 				},
+				"redirectOn1" : {
+					"label" : "automatic redirect to product page",
+					"tooltipText" : "If you want an automatic redirection to the product page of a single search result, set this to true."
+				},
                 "semknoxActivateCategoryListing": {
                 	"label" : "use SiteSearch360-data for category-listings",
                 	"tooltipText": "if you want to use the SiteSearch360-data in your category-listings, set this to true"

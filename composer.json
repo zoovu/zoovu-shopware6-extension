@@ -2,7 +2,7 @@
 	"name" : "semknox/semknox-search",
 	"description" : "Stellt einen Such-Controller zur Nutzung der semantischen Suche von SiteSearch360 bereit. Zur Nutzung benötigen Sie eine API-Key und eine Customer-ID, die Sie während der Installation abfragen können.",
 	"type": "shopware-platform-plugin",
-	"version" : "3.3.3",
+	"version" : "3.3.4",
 	"license" : "GPL-3.0-or-later",
 	"authors" : [{
 			"name" : "SEMKNOX",

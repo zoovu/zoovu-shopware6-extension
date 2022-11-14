@@ -724,10 +724,19 @@ class ProductDataProvider implements ProductProviderInterface
                     if (!isset($ret[$id])) {
                         $ret[$id]=['name'=>$k, 'values'=>[]];
                     }
-                    $elm=[];
-                    $elm['id']=$v;
-                    $elm['name']=$v;
-                    $ret[$id]['values'][]=$elm;                    
+                    if (is_array($v)) {
+                        foreach ($v as $vv) {
+                            $elm = [];
+                            $elm['id'] = $vv;
+                            $elm['name'] = $vv;
+                            $ret[$id]['values'][] = $elm;
+                        }
+                    } else {
+                        $elm = [];
+                        $elm['id'] = $v;
+                        $elm['name'] = $v;
+                        $ret[$id]['values'][] = $elm;
+                    }
                 }
             }
             if ( (isset($trans['customSearchKeywords'])) && (is_array($trans['customSearchKeywords'])) ) {

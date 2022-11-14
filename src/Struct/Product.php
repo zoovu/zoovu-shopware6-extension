@@ -600,8 +600,11 @@ class Product extends Struct
                             $hr[]=$cat['id'];
                         }
                     }
-                    $h=[];$h['path']=$hr;
-                    $ret[]=$h;
+                    if (!empty($hr)) {
+                        $h = [];
+                        $h['path'] = $hr;
+                        $ret[] = $h;
+                    }
                 }
             }
         }        

@@ -23,7 +23,7 @@ Shopware.Component.register('semknox-search-index', {
 	
 	data() {
 		return {
-						applicationRoot : null,
+			applicationRoot : null,
             isLoading: false,
             isPrefsLoading: false,
             isSaveSuccessful: false,
@@ -347,6 +347,10 @@ Shopware.Component.register('semknox-search-index', {
 					this.semknoxPrefConfigData['semknoxSearch.config.semknoxUpdateUploadContent'] = true;
 					this.ScLangPrefConfigData['semknoxSearch.config.semknoxUpdateUploadContent'] = true;
 				}
+				if (!this.semknoxPrefConfigData.hasOwnProperty('semknoxSearch.config.semknoxRedirectOn1')) {
+					this.semknoxPrefConfigData['semknoxSearch.config.semknoxRedirectOn1'] = false;
+					this.ScLangPrefConfigData['semknoxSearch.config.semknoxRedirectOn1'] = false;
+				}
 
 				this.checkRequiredPrefFields();
 				//this.semknoxConfigData = res;
@@ -393,6 +397,10 @@ Shopware.Component.register('semknox-search-index', {
 				if (!this.semknoxConfigData.hasOwnProperty('semknoxSearch.config.semknoxUpdateUploadContent')) {
 					this.semknoxConfigData['semknoxSearch.config.semknoxUpdateUploadContent'] = true;
 					this.ScLangConfigData['semknoxSearch.config.semknoxUpdateUploadContent'] = true;
+				}
+				if (!this.semknoxConfigData.hasOwnProperty('semknoxSearch.config.semknoxRedirectOn1')) {
+					this.semknoxConfigData['semknoxSearch.config.semknoxRedirectOn1'] = false;
+					this.ScLangConfigData['semknoxSearch.config.semknoxRedirectOn1'] = false;
 				}
 				if (!this.semknoxConfigData.hasOwnProperty('semknoxSearch.config.semknoxActivateCategoryListing')) {
 					this.semknoxConfigData['semknoxSearch.config.semknoxActivateCategoryListing'] = false;
@@ -530,6 +538,7 @@ Shopware.Component.register('semknox-search-index', {
 			this.saveSinglePref('semknoxSearch.config.semknoxUpdateBlocksize');
 			this.saveSinglePref('semknoxSearch.config.semknoxUpdateUseVariantMaster');
 			this.saveSinglePref('semknoxSearch.config.semknoxUpdateUploadContent');
+			this.saveSinglePref('semknoxSearch.config.semknoxRedirectOn1');
 		},
 		
 		saveSingle(configId) {

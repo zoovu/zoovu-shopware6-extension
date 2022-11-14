@@ -1,3 +1,9 @@
+#3.3.4
+redirect on one product in search result (with config)
+fix for arrays in custom entities of properties
+no empty paths in categories breadcrumb
+log errors to database on sending blockdata 
+
 #3.3.3
 added logging to struct/product on error in attributes-handling
 removed currency from product-search-association (only available in saleschannel-context

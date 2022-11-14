@@ -336,6 +336,21 @@
 															</sw-inherit-wrapper>
 														{% endblock %}
 
+														{% block semknox_search_content_card_channel_config_preferences_card_container_settings_redirecton1 %}
+															<sw-inherit-wrapper v-model="ScLangPrefConfigData['semknoxSearch.config.semknoxRedirectOn1']"
+																				:customInheritationCheckFunction="checkTextFieldInheritance">
+																<template #content="props">
+																	<sw-checkbox-field name="semknoxSearch.config.semknoxRedirectOn1"
+																					   :mapInheritance="props"
+																					   :label="$tc('semknox-search.settingForm.credentials.redirectOn1.label')"
+																					   :helpText="$tc('semknox-search.settingForm.credentials.redirectOn1.tooltipText')"
+																					   :disabled="props.isInherited || !aclAllowed('semknox_search.editor')"
+																					   :value="props.currentValue"
+																					   @change="props.updateCurrentValue">
+																	</sw-checkbox-field>
+																</template>
+															</sw-inherit-wrapper>
+														{% endblock %}
 
 								                    </div>
 								                  {% endblock %}

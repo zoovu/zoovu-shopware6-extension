@@ -331,7 +331,10 @@ class semknoxExporter implements semknoxExporterInterface
         $logt=$res['status'];if (isset($res['resultText'])) { $logt.='##'.$res['resultText']; }if (isset($res['message']) && ($res['message']!=$res['resultText'])) { $logt.='##'.$res['message']; }
         $res['offset']=$offset;
         $this->semknoxSearchHelper->logData(10, 'update.send.p2', ['updateSendData'=>$res]);
-        if ($res['status'] < 0) { $ret=-12; return $ret; } else { $ret = 1; }
+        if ($res['status'] < 0) {
+            $this->semknoxSearchHelper->logData(100, 'update.send.p2.error', ['updateSendData'=>$res], 500);
+            $ret=-12; return $ret;
+        } else { $ret = 1; }
         return $ret;
     }
     public function resetUpload(string $scID, string $langID, string $domainID) : int

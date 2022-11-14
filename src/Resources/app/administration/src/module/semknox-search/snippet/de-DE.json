@@ -115,6 +115,10 @@
 					"label" : "Content-Daten zu SiteSearch360 übertragen",
 					"tooltipText": "Wollen Sie die Contentdaten über das Plugin hochladen, setzen Sie hier den Haken."
 				},
+				"redirectOn1" : {
+					"label" : "autom. Weiterleitung bei einem Produkt im Suchergebnis",
+					"tooltipText" : "Wenn Sie automatisch auf die Produktseite eines einzelnen Produkts im Suchergebnis weiterleiten wollen, setzen Sie hier den Haken."
+				},
                 "semknoxActivateCategoryListing": {
                 	"label" : "Nutze SiteSearch360 für das Kategorie-Listing",
                 	"tooltipText": "Aktiviere diese Option, um die Daten für die Kategorie-Listings ebenfalls durch SiteSearch360 zu generieren."
