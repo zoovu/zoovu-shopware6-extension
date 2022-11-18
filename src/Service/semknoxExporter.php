@@ -111,9 +111,19 @@ class semknoxExporter implements semknoxExporterInterface
         if ($lastProvider === '') { $lastProvider = null; }
         /** @var ProductProviderInterface $productProvider */
         $productProvider = $this->getProductProvider($lastProvider);
-        $this->createLogPath($this->add_ending_slash($this->logDir).'semknox');
-        $mylogdir = $this->add_ending_slash($this->add_ending_slash($this->logDir).'semknox');
+        $this->createLogPath($this->semknoxSearchHelper->add_ending_slash($this->logDir).'semknox');
+        $mylogdir = $this->semknoxSearchHelper->add_ending_slash($this->semknoxSearchHelper->add_ending_slash($this->logDir).'semknox');
         $productResult = $productProvider->getProductData($salesChannelContext, $this->batchSize, $offset, $mylogdir);
+        if ( ($offset==0) && ($productResult->getNextOffset()==0) ) {
+            return new semknoxGenerationResult(
+                false,
+                $lastProvider,
+                $productResult->getNextOffset(),
+                $salesChannelContext->getSalesChannel()->getId(),
+                $salesChannelContext->getSalesChannel()->getLanguageId(),
+                $domainID
+            );
+        }
         $host = $this->getHost($salesChannelContext);
         $finish=false;
         if ($productResult->getNextOffset() !== null) {
@@ -135,17 +145,23 @@ class semknoxExporter implements semknoxExporterInterface
             $domainID
             );
     }
-    public function generateCategoriesData(SalesChannelContext $salesChannelContext): int
+    public function generateCategoriesData(SalesChannelContext $salesChannelContext, ?string $lastProvider = null, ?int $offset = null, ?int $batchSize = 500): array
     {
-        $ret=0;
+        $ret=$this->semknoxSearchHelper->apiResult_asArray();
         $catData=[];
         /** @var ProductProviderInterface $productProvider */
         $productProvider = $this->getProductProvider('product');
+        if ($lastProvider === '') { $lastProvider = null; }
+        /** @var ProductProviderInterface $productProvider */
+        $productProvider = $this->getProductProvider($lastProvider);
+        $host = $this->getHost($salesChannelContext);
+        $this->createLogPath($this->semknoxSearchHelper->add_ending_slash($this->logDir).'semknox');
         $catData = $productProvider->getCategoryData($salesChannelContext);
         $scID=$salesChannelContext->getSalesChannel()->getId();
         $langID=$salesChannelContext->getSalesChannel()->getLanguageId();
         $domainID=$this->semknoxSearchHelper->getDomainFromSCContextExt($salesChannelContext);
         $ret = $this->ExportCategories($catData, $scID, $langID, $domainID);
+        $ret = $this->semknoxSearchHelper->apiResult_asArray($ret);
         return $ret;
     }
     private function lock(SalesChannelContext $salesChannelContext): bool
@@ -215,43 +231,71 @@ class semknoxExporter implements semknoxExporterInterface
         }
         return null;
     }
-    private function add_ending_slash(string $path) : string
+    private function ExportCategories(array $catData, string $scID, string $langID, string $domainID) : array
     {
-        $slash_type = (strpos($path, '\\')===0) ? 'win' : 'unix';
-        $last_char = substr($path, strlen($path)-1, 1);
-        if ($last_char != '/' and $last_char != '\\') {
-            $path .= ($slash_type == 'win') ? '\\' : '/';
-        }
-        return $path;
-    }
-    private function ExportCategories(array $catData, string $scID, string $langID, string $domainID) : int
-    {
-        $ret = 1;
+        $ret = $this->semknoxSearchHelper->apiResult_asArray();
+        $ret['status'] = 1;
         $mainConfig = $this->semknoxSearchHelper->getMainConfigParams($scID, $domainID);
         if ( (is_array($catData)) && (!empty($catData)) ) {
-            $api = new semknoxBaseApi($mainConfig['semknoxBaseUrl'], $mainConfig['semknoxCustomerId'],
+            $ret['status'] = -1;
+            try {
+                $api = new semknoxBaseApi($mainConfig['semknoxBaseUrl'], $mainConfig['semknoxCustomerId'],
                     $mainConfig['semknoxApiKey'], "updateSessionID");
-            $api->addHeaderInfoData($this->semknoxSearchHelper->getHeaderInfoData());
-            $api->setLogPath($this->add_ending_slash($this->logDir) . 'semknox');
-            $this->semknoxSearchHelper->logData(1, 'siteSearch360: start sending catData -');
-            $ret = -21;
-            sleep(1);
-            $res = $api->sendCatDatav3($catData);
-            $logt = $res['status'];
-            if (isset($res['resultText'])) {
-                $logt .= '##' . $res['resultText'];
-            }
-            $this->semknoxSearchHelper->logData(10, 'update.send.cat', ['updateSendData' => $res]);
-            if ($res['status'] < 0) {
-                $ret = -22;
-                return $ret;
-            } else {
-                $ret = 1;
+                $api->addHeaderInfoData($this->semknoxSearchHelper->getHeaderInfoData());
+                $api->setLogPath($this->semknoxSearchHelper->add_ending_slash($this->logDir) . 'semknox');
+                $this->semknoxSearchHelper->logData(1, 'siteSearch360: start sending catData -');
+                $ret = -21;
+                sleep(1);
+                $res = $api->sendCatDatav3($catData);
+                $logt = $res['status'];
+                if (isset($res['resultText'])) {
+                    $logt .= '##' . $res['resultText'];
+                }
+                $this->semknoxSearchHelper->logData(10, 'update.send.cat', ['updateSendData' => $res]);
+                if ($res['status'] < 0) {
+                    $ret = -22;
+                    return $this->semknoxSearchHelper->apiResult_asArray($res);
+                } else {
+                    $ret = $this->semknoxSearchHelper->apiResult_asArray($res);
+                }
+            } catch (\Throwable $t) {
+                $this->logData(1, 'ExportCategories.ERROR', ['msg' => $t->getMessage()], 500);
+                $ret['status'] = -1;
+                $ret['resultText'] = $t->getMessage();
             }
         }
         return $ret;
     }
-        /**
+    /**
+     * sends the update-command to sitesearch360 for finishing updateprocess for one saleschannel
+     * @param SalesChannelContext $salesChannelContext
+     * @return int
+     */
+    public function finishUpdate(SalesChannelContext $salesChannelContext) : array {
+        $ret=$this->semknoxSearchHelper->apiResult_asArray();
+        $ret['status']=0;
+        $scID=$salesChannelContext->getSalesChannel()->getId();
+        $langID=$salesChannelContext->getSalesChannel()->getLanguageId();
+        $domainID=$this->semknoxSearchHelper->getDomainFromSCContextExt($salesChannelContext);
+        try {
+            $mainConfig = $this->semknoxSearchHelper->getMainConfigParams($scID,$domainID);
+            $api = new semknoxBaseApi($mainConfig['semknoxBaseUrl'], $mainConfig['semknoxCustomerId'], $mainConfig['semknoxApiKey'], "updateSessionID");
+            $api->addHeaderInfoData($this->semknoxSearchHelper->getHeaderInfoData());
+            $api->setLogPath($this->semknoxSearchHelper->add_ending_slash($this->logDir).'semknox');
+            $this->semknoxSearchHelper->logData(1, 'siteSearch360: finish update -');
+            $ret['status']=-21;
+            $res = $api->finishBatchUpload();
+            $logt=$res['status'];if (isset($res['resultText'])) { $logt.='##'.$res['resultText']; }
+            $this->semknoxSearchHelper->logData(10, 'update.send.p3', ['updateSendData'=>$res]);
+            $ret=$this->semknoxSearchHelper->apiResult_asArray($res);
+        } catch (\Throwable $t) {
+            $this->logData(1, 'finishUpdate.ERROR', ['msg' => $t->getMessage()], 500);
+            $ret['resultText'] = $t->getMessage();
+            return $ret;
+        }
+        return $ret;
+    }
+    /**
      * sending data to sitesearch-server
      * if offset > 0 no starting-signal will be sent
      * is finish <> true no finish-signal will b sent
@@ -265,23 +309,11 @@ class semknoxExporter implements semknoxExporterInterface
         $ret=1;
         $mainConfig = $this->semknoxSearchHelper->getMainConfigParams($scID,$domainID);
         if (!$productList->hasProducts()) {
-            if ($finish) {
-                $api = new semknoxBaseApi($mainConfig['semknoxBaseUrl'], $mainConfig['semknoxCustomerId'], $mainConfig['semknoxApiKey'], "updateSessionID");
-                $api->addHeaderInfoData($this->semknoxSearchHelper->getHeaderInfoData());
-                $api->setLogPath($this->add_ending_slash($this->logDir).'semknox');
-                $this->semknoxSearchHelper->logData(1, 'siteSearch360: finish update -');
-                $ret=-21;
-                sleep(2);
-                $res = $api->finishBatchUpload();
-                $logt=$res['status'];if (isset($res['resultText'])) { $logt.='##'.$res['resultText']; }
-                $this->semknoxSearchHelper->logData(10, 'update.send.p3', ['updateSendData'=>$res]);
-                if ($res['status'] < 0) { $ret=-22; return $ret; } else { $ret = 1; }                
-            }
-            return $ret; 
+            return $ret;
         }
         $api = new semknoxBaseApi($mainConfig['semknoxBaseUrl'], $mainConfig['semknoxCustomerId'], $mainConfig['semknoxApiKey'], "updateSessionID");
         $api->addHeaderInfoData($this->semknoxSearchHelper->getHeaderInfoData());
-        $r=$api->setLogPath($this->add_ending_slash($this->logDir).'semknox');
+        $r=$api->setLogPath($this->semknoxSearchHelper->add_ending_slash($this->logDir).'semknox');
         if ( (is_null($offset)) || ($offset === 0) ) {
             $this->semknoxSearchHelper->logData(10, 'log.update.LogStart', ['dir'=>$this->logDir, 'status'=>$r]);
             $api->resetJsonLog();
@@ -289,7 +321,7 @@ class semknoxExporter implements semknoxExporterInterface
             $ret=-1;
             $res = $api->startBatchUpload();
             $logt=$res['status'];if (isset($res['resultText'])) { $logt.='##'.$res['resultText']; }
-            $this->semknoxSearchHelper->logData(10, 'update.send.p1', ['updateSendData'=>$res]);
+            $this->semknoxSearchHelper->logData(100, 'update.send.p1', ['updateSendData'=>$res]);
             if ($res['status'] < 0 ) { $ret = -2; return $ret; } else { $ret = 1; }
             sleep(2);
         }
@@ -299,16 +331,10 @@ class semknoxExporter implements semknoxExporterInterface
         $logt=$res['status'];if (isset($res['resultText'])) { $logt.='##'.$res['resultText']; }if (isset($res['message']) && ($res['message']!=$res['resultText'])) { $logt.='##'.$res['message']; }
         $res['offset']=$offset;
         $this->semknoxSearchHelper->logData(10, 'update.send.p2', ['updateSendData'=>$res]);
-        if ($res['status'] < 0) { $ret=-12; return $ret; } else { $ret = 1; }
-        if ($finish) {
-            $this->semknoxSearchHelper->logData(1, 'siteSearch360: finish update');
-            $ret=-21;
-            sleep(2);
-            $res = $api->finishBatchUpload();
-            $logt=$res['status'];if (isset($res['resultText'])) { $logt.='##'.$res['resultText']; }
-            $this->semknoxSearchHelper->logData(10, 'update.send.p3', ['updateSendData'=>$res]);
-            if ($res['status'] < 0) { $ret=-22; return $ret; } else { $ret = 1; }
-        }
+        if ($res['status'] < 0) {
+            $this->semknoxSearchHelper->logData(100, 'update.send.p2.error', ['updateSendData'=>$res], 500);
+            $ret=-12; return $ret;
+        } else { $ret = 1; }
         return $ret;
     }
     public function resetUpload(string $scID, string $langID, string $domainID) : int

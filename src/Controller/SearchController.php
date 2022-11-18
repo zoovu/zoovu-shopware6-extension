@@ -7,6 +7,7 @@ use Shopware\Core\Framework\Routing\Exception\MissingRequestParameterException;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Storefront\Controller\SearchController as ShopwareSearchController;
 use Shopware\Storefront\Framework\Cache\Annotation\HttpCache;
+use Shopware\Storefront\Page\Search\SearchPage;
 use Shopware\Storefront\Page\Search\SearchPageLoader;
 use Shopware\Storefront\Page\Suggest\SuggestPageLoader;
 use Symfony\Component\HttpFoundation\Request;
@@ -37,6 +38,7 @@ class SearchController extends ShopwareSearchController
      * @var SearchController
      */
     private $decorated;
+    private $preferences = [];
     public function __construct(
         ShopwareSearchController $deco,
         SearchPageLoader $searchPageLoader,
@@ -49,6 +51,7 @@ class SearchController extends ShopwareSearchController
         $this->searchPageLoader = $searchPageLoader;
         $this->suggestPageLoader = $suggestPageLoader;
         $this->semknoxSearchHelper = $helper;
+        $this->preferences = $this->semknoxSearchHelper->getPreferences();
     }
     /**
      * @HttpCache()
@@ -73,6 +76,12 @@ class SearchController extends ShopwareSearchController
         if ($redir!='') {
             return $this->redirect($redir);
         }
+       if ( ($this->preferences['semknoxRedirectOn1']) && ($page->getListing()->getTotal() == 1) ) {
+           $ent = $page->getListing()->getEntities()->first();
+           if ($ent) {
+                return $this->redirectToRoute('frontend.detail.page', ['productId' => $ent->getId()]);
+           }
+        }
         $useinternal = $this->getUseShopwareSearch($page);
         if ($useinternal > 0) {
             $this->getCleanRequest($origContext, $origRequest);
@@ -86,7 +95,7 @@ class SearchController extends ShopwareSearchController
         $qa['useinternal']=525;
         $request = $request->duplicate($qa);
     }
-    private function getRedirect($page) {
+    private function getRedirect(SearchPage $page) {
         $ret='';
         $ext=$page->getListing()->getExtension('semknoxResultData');
         if ($ext) {

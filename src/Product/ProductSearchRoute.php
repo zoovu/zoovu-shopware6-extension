@@ -406,6 +406,8 @@ class ProductSearchRoute extends AbstractProductSearchRoute
         }
         if ( ($displType == 'text') || ($displType == 'color') ) {
             foreach ($filter['values'] as $value) {
+                if (!isset($value['name'])) { continue; }
+                if (!isset($value['value'])) { continue; }
                 $pgoe = new PropertyGroupOptionEntity();
                 $pgoe->setName($value['name']);
                 $pgoe->setPosition($pos++);
