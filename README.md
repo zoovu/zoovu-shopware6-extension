@@ -43,6 +43,17 @@ These filters are applied directly by the plugin via a SQL query
 Stage 2: After the actual JSON data was created per product, at the end it is evaluated whether an URL is available for the product and whether it is valid. If not, the product will not be uploaded.
 
 
+Q: How to speed up the product upload?
+
+A: You may use the parallel upload function by configuring the cronjob like this:
+
+
+    */1 * * php /[SHOPWARE DIRECTORY]/bin/console plugin-commands:semknoxFullUpdate >> /[SHOPWARE DIRECTORY]/var/log/semknox/cron.log
+    */1 * * (sleep 20; php /[SHOPWARE DIRECTORY]/bin/console plugin-commands:semknoxFullUpdate >> /[SHOPWARE DIRECTORY]/var/log/semknox/cron.log)
+    */1 * * (sleep 40; php /[SHOPWARE DIRECTORY]/bin/console plugin-commands:semknoxFullUpdate >> /[SHOPWARE DIRECTORY]/var/log/semknox/cron.log)
+
+
+
 ***
 CALLBACKS:
 
