@@ -1,3 +1,26 @@
+#3.3.4
+redirect on one product in search result (with config)
+fix for arrays in custom entities of properties
+no empty paths in categories breadcrumb
+log errors to database on sending blockdata 
+
+#3.3.3
+added logging to struct/product on error in attributes-handling
+removed currency from product-search-association (only available in saleschannel-context
+changed limit-handling, so the limit is taken from the current run and cant be changed during operation of a whole update-run
+
+#3.3.2
+added new function to enable/disable content-upload
+fix backend-compile-error on new shopwareVersion-Checking
+fix error-message on wrong filtervalues from server
+
+#3.3.1
+added media-association to include media-urls for category-upload
+
+# 3.3.0
+parallel upload-functionality
+saleschanneldomainID fix for empty return-values
+
 #3.2.9
 removed getReference and changed order of version-getter-functions
 

@@ -36,6 +36,9 @@ class SemknoxsearchHelper
 {
     const FilterPrefix = '~';
     const FilterListSeparator = '|';
+    const blockMaxTime = 300; 
+    const blockMaxRetry = 10; 
+    const maxLogDays = 30; 
     /**
      * @var Client
      */
@@ -49,23 +52,23 @@ class SemknoxsearchHelper
      */
     private $logger;
     /**
-     * 
+     *
      * @var EntityRepositoryInterface
-    */ 
+     */
     private $logRepository = null;
     /**
      * @var SystemConfigService
      */
-    private $systemConfigService=null;
+    private $systemConfigService = null;
     /**
      * @var string
      */
-    private $prefix = ''; 
+    private $prefix = '';
     /**
      * root-Dir of shopware-installation
      * @var string
      */
-    private $rootDir='';
+    private $rootDir = '';
     /**
      * ID of the current saleschannel
      * Default-Saleschannel: DEFAULTS::SALES_CHANNEL
@@ -79,14 +82,24 @@ class SemknoxsearchHelper
     /**
      * @var Connection|null
      */
-    protected static $connection=null;
+    protected static $connection = null;
     /**
      * @var RequestStack
      */
     private $requestStack;
     private $searchEnabled = true;
-    private $supportedControllers = array('Shopware\Storefront\Controller\SearchController::search', 'Shopware\Storefront\Controller\SearchController::pagelet', 'Shopware\Storefront\Controller\SearchController::suggest', 'Shopware\Storefront\Controller\SearchController::ajax', 'Shopware\Storefront\Controller\SearchController::filter', 'siteSearchCMSController');
-    private $supportedControllersInListing = array('Shopware\Storefront\Controller\NavigationController::index', 'Shopware\Storefront\Controller\CmsController::category');
+    private $supportedControllers = array(
+        'Shopware\Storefront\Controller\SearchController::search',
+        'Shopware\Storefront\Controller\SearchController::pagelet',
+        'Shopware\Storefront\Controller\SearchController::suggest',
+        'Shopware\Storefront\Controller\SearchController::ajax',
+        'Shopware\Storefront\Controller\SearchController::filter',
+        'siteSearchCMSController'
+    );
+    private $supportedControllersInListing = array(
+        'Shopware\Storefront\Controller\NavigationController::index',
+        'Shopware\Storefront\Controller\CmsController::category'
+    );
     private $langTrans = []; 
     private $langTransX = []; 
     private $mainConfigVars = null; 
@@ -94,9 +107,9 @@ class SemknoxsearchHelper
     private $outputInt = null; 
     /**
      * 
-      public $calculator;
-    */
-    public $logDir='';
+     * public $calculator;
+     */
+    public $logDir = '';
     public function __construct(
         string $environment,
         Client $client,
@@ -107,7 +120,8 @@ class SemknoxsearchHelper
         string $rootDir,
         RequestStack $requestStack,
         SystemConfigService $systemConfigService
-    ) {
+    )
+    {
         $this->requestStack = $requestStack;
         $this->client = $client;
         $this->environment = $environment;
@@ -115,7 +129,7 @@ class SemknoxsearchHelper
         $this->logger = $logger;
         $this->productDefinition = $pd;
         $this->rootDir = $rootDir;
-        $this->logDir = $this->add_ending_slash($rootDir).'semknox';
+        $this->logDir = $this->add_ending_slash($rootDir) . 'semknox';
         $this->systemConfigService = $systemConfigService;
         $this->getConnection();
         $this->getSemknoxDBConfig();
@@ -129,50 +143,79 @@ class SemknoxsearchHelper
         $this->logger->error($exception->getMessage());
         return false;
     }
-    public function setLogRepository(EntityRepositoryInterface $logRepo) : void 
+    public function setLogRepository(EntityRepositoryInterface $logRepo): void
     {
         $this->logRepository = $logRepo;
     }
     public function setOutputInterface(OutputInterface $oi)
     {
-      $this->outputInt = $oi;  
+        $this->outputInt = $oi;
     }
     /**
      * logging considering logtypes to internal logs, stdout and/or DB
-     * @param int $logType  = 0 -> only shopware-logging = 10 -> enable output-logging = 100->DB-logging
+     * @param int $logType = 0 -> only shopware-logging = 10 -> enable output-logging = 100->DB-logging
      * @param string $entryName
      * @param array $additionalData
      * @param int $doShow
      * @param int $logLevel
      * @param string $logTitle
      */
-    public function logData(int $logType, string $entryName, array $additionalData = [], int $logLevel = 100, string $logTitle='') : void
-    {
+    public function logData(
+        int $logType,
+        string $entryName,
+        array $additionalData = [],
+        int $logLevel = 100,
+        string $logTitle = ''
+    ): void {
         if ($logType > 1) {
             switch ($logLevel) {
-                case 800    :  $this->logger->emergency(trim('semknox.'.$entryName." (".$logLevel.") ".$logTitle));break;
-                case 700    :  $this->logger->alert(trim('semknox.'.$entryName." (".$logLevel.") ".$logTitle));break;
-                case 600    :  $this->logger->critical(trim('semknox.'.$entryName." (".$logLevel.") ".$logTitle));break;
-                case 500    :  $this->logger->error(trim('semknox.'.$entryName." (".$logLevel.") ".$logTitle));break;
-                case 400    :  $this->logger->warning(trim('semknox.'.$entryName." (".$logLevel.") ".$logTitle));break;
-                case 300    :  $this->logger->notice(trim('semknox.'.$entryName." (".$logLevel.") ".$logTitle));break;
-                case 200    :  $this->logger->info(trim('semknox.'.$entryName." (".$logLevel.") ".$logTitle));break;
-                default        :  $this->logger->debug(trim('semknox.'.$entryName." (".$logLevel.") ".$logTitle));
+                case 800    :
+                    $this->logger->emergency(trim('semknox.' . $entryName . " (" . $logLevel . ") " . $logTitle));
+                    break;
+                case 700    :
+                    $this->logger->alert(trim('semknox.' . $entryName . " (" . $logLevel . ") " . $logTitle));
+                    break;
+                case 600    :
+                    $this->logger->critical(trim('semknox.' . $entryName . " (" . $logLevel . ") " . $logTitle));
+                    break;
+                case 500    :
+                    $this->logger->error(trim('semknox.' . $entryName . " (" . $logLevel . ") " . $logTitle));
+                    break;
+                case 400    :
+                    $this->logger->warning(trim('semknox.' . $entryName . " (" . $logLevel . ") " . $logTitle));
+                    break;
+                case 300    :
+                    $this->logger->notice(trim('semknox.' . $entryName . " (" . $logLevel . ") " . $logTitle));
+                    break;
+                case 200    :
+                    $this->logger->info(trim('semknox.' . $entryName . " (" . $logLevel . ") " . $logTitle));
+                    break;
+                default        :
+                    $this->logger->debug(trim('semknox.' . $entryName . " (" . $logLevel . ") " . $logTitle));
             }
         }
         if ($logType > 0) {
-            $outT=date('Y-m-d H:i:s').' :: '.$entryName;
+            $outT = date('Y-m-d H:i:s') . ' :: ' . $entryName;
             if (is_null($this->outputInt)) {
                 echo "\n$outT";
             } else {
                 $this->outputInt->writeln($outT);
             }
         }
-        if ( ($this->logRepository === null) || ($logType < 100) )  { return; }
-        if ($logTitle == '') { $logTitle = $entryName; }
+        if (($this->logRepository === null) || ($logType < 100)) {
+            return;
+        }
+        if ($logTitle == '') {
+            $logTitle = $entryName;
+        }
         $this->logRepository->create(
             [
-                ['logType'=>$entryName, 'logStatus'=>$logLevel, 'logTitle'=>$logTitle, 'logDescr'=>json_encode($additionalData)]
+                [
+                    'logType' => $entryName,
+                    'logStatus' => $logLevel,
+                    'logTitle' => $logTitle,
+                    'logDescr' => json_encode($additionalData)
+                ]
             ], \Shopware\Core\Framework\Context::createDefaultContext());
     }
     /** should be replaced by logdata! deprecated!
@@ -180,9 +223,14 @@ class SemknoxsearchHelper
      * @param string $entryName
      * @param array $additionalData
      */
-    public function log2ShopDB(string $entryName, array $additionalData = [], int $doShow=0, int $logLevel = 100, string $logTitle='') : void
-    {   
-        $this->logger->debug(trim('semknox.'.$entryName." (".$logLevel.") ".$logTitle));
+    public function log2ShopDB(
+        string $entryName,
+        array $additionalData = [],
+        int $doShow = 0,
+        int $logLevel = 100,
+        string $logTitle = ''
+    ): void {
+        $this->logger->debug(trim('semknox.' . $entryName . " (" . $logLevel . ") " . $logTitle));
         if ($doShow) {
             if (is_null($this->outputInt)) {
                 echo "\n$entryName";
@@ -191,11 +239,20 @@ class SemknoxsearchHelper
         if (!is_null($this->outputInt)) {
             $this->outputInt->writeln($entryName);
         }
-        if ($this->logRepository === null) { return; }
-        if ($logTitle == '') { $logTitle = $entryName; }
+        if ($this->logRepository === null) {
+            return;
+        }
+        if ($logTitle == '') {
+            $logTitle = $entryName;
+        }
         $this->logRepository->create(
-            [ 
-                ['logType'=>$entryName, 'logStatus'=>$logLevel, 'logTitle'=>$logTitle, 'logDescr'=>json_encode($additionalData)] 
+            [
+                [
+                    'logType' => $entryName,
+                    'logStatus' => $logLevel,
+                    'logTitle' => $logTitle,
+                    'logDescr' => json_encode($additionalData)
+                ]
             ], \Shopware\Core\Framework\Context::createDefaultContext());
         /* loggt leider nicht im scheduler...
         $this->monologger->addRecord(
@@ -207,7 +264,7 @@ class SemknoxsearchHelper
                 'additionalData' => $additionalData,
             ]
             );
-        */            
+        */
     }
     public function getIndexName(EntityDefinition $definition, string $languageId): string
     {
@@ -223,12 +280,12 @@ class SemknoxsearchHelper
         }
         return true;
     }
-    public  function getLanguageCodeByID($id) : string 
+    public function getLanguageCodeByID($id): string
     {
-        if ( (is_array($this->langTrans)) && (isset($this->langTrans[$id])) ) {
+        if ((is_array($this->langTrans)) && (isset($this->langTrans[$id]))) {
             return $this->langTrans[$id];
         }
-        $ret='';
+        $ret = '';
         $this->getConnection();
         $q = "SELECT lang.name, loc.code FROM language lang, locale loc WHERE loc.id = lang.locale_id AND lang.id = 0x$id ";
         $ta = self::$connection->executeQuery($q)->fetchAll(FetchMode::ASSOCIATIVE);
@@ -240,19 +297,19 @@ class SemknoxsearchHelper
         }
         return $ret;
     }
-    public  function getLanguageIDByCode($code) : string
+    public function getLanguageIDByCode($code): string
     {
-        if ( (is_array($this->langTransX)) && (isset($this->langTransX[$code])) ) {
+        if ((is_array($this->langTransX)) && (isset($this->langTransX[$code]))) {
             return $this->langTransX[$code];
         }
-        $ret='';
+        $ret = '';
         $this->getConnection();
         $q = "SELECT lang.name, lang.id FROM language lang, locale loc WHERE loc.id = lang.locale_id AND loc.code = '$code' ";
         $ta = self::$connection->executeQuery($q)->fetchAll(FetchMode::ASSOCIATIVE);
         foreach ($ta as $it) {
             $id = $this->getDBConfigChannelID($it['id']);
-            if (substr($id,0,2)=='0x') {
-                $ret = substr($id,2,10000);                
+            if (substr($id, 0, 2) == '0x') {
+                $ret = substr($id, 2, 10000);
             } else {
                 $ret = $id;
             }
@@ -262,9 +319,9 @@ class SemknoxsearchHelper
         }
         return $ret;
     }
-    public function getQueryResult(String $query) : array
+    public function getQueryResult(string $query): array
     {
-        $ret=[];
+        $ret = [];
         $this->getConnection();
         $ta = self::$connection->executeQuery($query)->fetchAll(FetchMode::ASSOCIATIVE);
         foreach ($ta as $it) {
@@ -272,47 +329,61 @@ class SemknoxsearchHelper
         }
         return $ret;
     }
-    public function execQuery(String $query) : int
+    public function execQuery(string $query): int
     {
-        $ret=0;
+        $ret = 0;
         $this->getConnection();
         $ta = self::$connection->executeQuery($query);
-        $ret=1;
+        $ret = 1;
         return $ret;
     }
     /**
      * returns the array of semknox-preferences for the whole system
      * @return array
      */
-    public function getPreferences() : array {
-        $ret=['semknoxUpdateCronTime' => 0, 'semknoxUpdateCronInterval' => 24, 'semknoxUpdateBlocksize' => 500, 'semknoxUpdateUseVariantMaster' => false];
+    public function getPreferences(): array
+    {
+        $ret = [
+            'semknoxUpdateCronTime' => 0,
+            'semknoxUpdateCronInterval' => 24,
+            'semknoxUpdateBlocksize' => 500,
+            'semknoxUpdateUseVariantMaster' => false,
+            'semknoxUpdateUploadContent' => true,
+            'semknoxRedirectOn1' => false
+        ];
         $h = $this->getMainConfigParams('00000000000000000000000000000000', '00000000000000000000000000000000');
-        if ( (isset ($h['semknoxUpdateCronTime'])) && 
-                  ($h['semknoxUpdateCronTime']>-1) &&
-                  ($h['semknoxUpdateCronTime']<24) ) {
-                      $ret['semknoxUpdateCronTime'] = intval($h['semknoxUpdateCronTime']);  
+        if ((isset ($h['semknoxUpdateCronTime'])) &&
+            ($h['semknoxUpdateCronTime'] > -1) &&
+            ($h['semknoxUpdateCronTime'] < 24)) {
+            $ret['semknoxUpdateCronTime'] = intval($h['semknoxUpdateCronTime']);
         }
-        if ( (isset ($h['semknoxUpdateCronInterval'])) &&
-                ($h['semknoxUpdateCronInterval']>2) &&
-                ($h['semknoxUpdateCronInterval']<25) ) {
-                    $ret['semknoxUpdateCronInterval'] = intval($h['semknoxUpdateCronInterval']);
+        if ((isset ($h['semknoxUpdateCronInterval'])) &&
+            ($h['semknoxUpdateCronInterval'] > 2) &&
+            ($h['semknoxUpdateCronInterval'] < 25)) {
+            $ret['semknoxUpdateCronInterval'] = intval($h['semknoxUpdateCronInterval']);
         }
-        if ( (isset ($h['semknoxUpdateBlocksize'])) &&
-                ($h['semknoxUpdateBlocksize'] > 20) &&
-                ($h['semknoxUpdateBlocksize'] < 200000) ) {
-                    $ret['semknoxUpdateBlocksize'] = intval($h['semknoxUpdateBlocksize']);
+        if ((isset ($h['semknoxUpdateBlocksize'])) &&
+            ($h['semknoxUpdateBlocksize'] > 20) &&
+            ($h['semknoxUpdateBlocksize'] < 200000)) {
+            $ret['semknoxUpdateBlocksize'] = intval($h['semknoxUpdateBlocksize']);
         }
         if (isset ($h['semknoxUpdateUseVariantMaster'])) {
             $ret['semknoxUpdateUseVariantMaster'] = $h['semknoxUpdateUseVariantMaster'];
         }
-        $ret['semknoxUpdateCronTimeList']=[];
-        $i=$ret['semknoxUpdateCronTime'];
+        if (isset ($h['semknoxUpdateUploadContent'])) {
+            $ret['semknoxUpdateUploadContent'] = $h['semknoxUpdateUploadContent'];
+        }
+        if (isset ($h['semknoxRedirectOn1'])) {
+            $ret['semknoxRedirectOn1'] = $h['semknoxRedirectOn1'];
+        }
+        $ret['semknoxUpdateCronTimeList'] = [];
+        $i = $ret['semknoxUpdateCronTime'];
         do {
             $start = $i;
             $i -= $ret['semknoxUpdateCronInterval'];
         } while ($i > -1);
         do {
-            $ret['semknoxUpdateCronTimeList'][]=$start;
+            $ret['semknoxUpdateCronTimeList'][] = $start;
             $start += $ret['semknoxUpdateCronInterval'];
         } while ($start < 24);
         return $ret;
@@ -324,30 +395,36 @@ class SemknoxsearchHelper
      * @param number $doUpdate
      * @return NULL|NULL|mixed
      */
-    public function allowSalesChannel($scID, $domainID, $doUpdate=0) {
+    public function allowSalesChannel($scID, $domainID, $doUpdate = 0)
+    {
         $ret = null;
         $ret = $this->getMainConfigParams($scID, $domainID);
         if (is_null($ret)) {
             return null;
         }
-        if  (!$ret['valid']) {
+        if (!$ret['valid']) {
             return null;
         }
         if ($doUpdate) {
-            if ( (!$ret['semknoxActivate']) && (!$ret['semknoxActivateUpdate']) ) {
-                $ret=null;
+            if ((!$ret['semknoxActivate']) && (!$ret['semknoxActivateUpdate'])) {
+                $ret = null;
             }
         } else {
             if (!$ret['semknoxActivate']) {
-                $ret=null;
+                $ret = null;
             }
         }
         return $ret;
     }
-    public function allowSearchByContext(EntityDefinition $definition, Context $context, string $controller=''): ?array
-    {
+    public function allowSearchByContext(
+        EntityDefinition $definition,
+        Context $context,
+        string $controller = ''
+    ): ?array {
         $scId = $this->getSalesChannelFromSCContext($context);
-        if ($scId=='') { return null; }
+        if ($scId == '') {
+            return null;
+        }
         $domainId = $this->getDomainFromSCContext($context);
         return $this->allowSearch($definition, $context, $scId, $domainId, $controller);
     }
@@ -357,29 +434,44 @@ class SemknoxsearchHelper
      * @param Request $request
      * @return boolean
      */
-    public function useSiteSearch(SalesChannelContext $context, Request $request, ?EntityDefinition $definition=null) {
+    public function useSiteSearch(SalesChannelContext $context, Request $request, ?EntityDefinition $definition = null)
+    {
         $this->setSessionID($request);
-        $scID=$this->getSalesChannelFromSCContext($context);
+        $scID = $this->getSalesChannelFromSCContext($context);
         $domainID = $this->getDomainFromSCContext($context);
-        $contr=$request->attributes->get('_controller');
-        if (is_null($definition)) { $definition = $this->productDefinition; }
-        $mainConfig=$this->allowSearch($definition, $context->getContext(), $scID, $domainID, $contr);
-        if ($mainConfig===null) {
+        $contr = $request->attributes->get('_controller');
+        if (is_null($definition)) {
+            $definition = $this->productDefinition;
+        }
+        $mainConfig = $this->allowSearch($definition, $context->getContext(), $scID, $domainID, $contr);
+        if ($mainConfig === null) {
             return false;
         }
         return true;
     }
-    public function useSiteSearchInListing(SalesChannelContext $context, Request $request, ?EntityDefinition $definition=null) {
+    public function useSiteSearchInListing(
+        SalesChannelContext $context,
+        Request $request,
+        ?EntityDefinition $definition = null
+    ) {
         $this->setSessionID($request);
-        $scID=$this->getSalesChannelFromSCContext($context);
+        $scID = $this->getSalesChannelFromSCContext($context);
         $domainID = $this->getDomainFromSCContext($context);
-        $contr=$request->attributes->get('_controller');
-        if (is_null($definition)) { $definition = $this->productDefinition; }
-        if (is_null($contr)) { return false; }
-        if (is_null($domainID)) { return false; }
-        if (is_null($scID)) { return false; }
-        $mainConfig=$this->allowCatListing($definition, $context->getContext(), $scID, $domainID, $contr);
-        if ($mainConfig===null) {
+        $contr = $request->attributes->get('_controller');
+        if (is_null($definition)) {
+            $definition = $this->productDefinition;
+        }
+        if (is_null($contr)) {
+            return false;
+        }
+        if (is_null($domainID)) {
+            return false;
+        }
+        if (is_null($scID)) {
+            return false;
+        }
+        $mainConfig = $this->allowCatListing($definition, $context->getContext(), $scID, $domainID, $contr);
+        if ($mainConfig === null) {
             return false;
         }
         return true;
@@ -388,8 +480,13 @@ class SemknoxsearchHelper
      * Validates if it is allowed do execute the search request over semknoxsearch
      * used in ProductSearchbuilder und SemknoxsearchEntityServer
      */
-    public function allowSearch(EntityDefinition $definition, Context $context, string $salesChannelID='', string $domainID='', string $controller=''): ?array
-    {
+    public function allowSearch(
+        EntityDefinition $definition,
+        Context $context,
+        string $salesChannelID = '',
+        string $domainID = '',
+        string $controller = ''
+    ): ?array {
         $ret = null;
         if (!$this->searchEnabled) {
             return $ret;
@@ -398,11 +495,11 @@ class SemknoxsearchHelper
         if (is_null($ret)) {
             return $ret;
         }
-        if ( (!$ret['valid']) || (!$ret['semknoxActivate']) ) {
-            $ret=null;
+        if ((!$ret['valid']) || (!$ret['semknoxActivate'])) {
+            $ret = null;
         }
         if (!$this->isSupported($definition, $controller)) {
-            $ret=null;
+            $ret = null;
         }
         return $ret;
         return $this->logOrThrowException(new NoIndexedDocumentsException($definition->getEntityName()));
@@ -410,8 +507,13 @@ class SemknoxsearchHelper
     /**
      * Validates if it is allowed do execute the cat-listing request over sitesearch360
      */
-    public function allowCatListing(EntityDefinition $definition, Context $context, string $salesChannelID='', string $domainID='', string $controller=''): ?array
-    {
+    public function allowCatListing(
+        EntityDefinition $definition,
+        Context $context,
+        string $salesChannelID = '',
+        string $domainID = '',
+        string $controller = ''
+    ): ?array {
         $ret = null;
         if (!$this->searchEnabled) {
             return $ret;
@@ -420,20 +522,28 @@ class SemknoxsearchHelper
         if (is_null($ret)) {
             return $ret;
         }
-        if ( (!$ret['valid']) || (!$ret['semknoxActivate']) || (!$ret['semknoxActivateCategoryListing']) ) {
-            $ret=null;
+        if ((!$ret['valid']) || (!$ret['semknoxActivate']) || (!$ret['semknoxActivateCategoryListing'])) {
+            $ret = null;
         }
         if (!$this->isSupportedInListing($definition, $controller)) {
-            $ret=null;
+            $ret = null;
         }
         return $ret;
     }
-    public function handleIds(EntityDefinition $definition, Criteria $criteria, Searchbody $search, Context $context): void
-    {
+    public function handleIds(
+        EntityDefinition $definition,
+        Criteria $criteria,
+        Searchbody $search,
+        Context $context
+    ): void {
         return;
     }
-    public function addFilters(EntityDefinition $definition, Criteria $criteria, Searchbody $search, Context $context): void
-    {
+    public function addFilters(
+        EntityDefinition $definition,
+        Criteria $criteria,
+        Searchbody $search,
+        Context $context
+    ): void {
         return;
     }
     /**
@@ -443,44 +553,57 @@ class SemknoxsearchHelper
      * @param Searchbody $search
      * @param Context $context
      */
-    public function addPostFilters(EntityDefinition $definition, Criteria $criteria, Searchbody $search, Context $context): void
-    {
+    public function addPostFilters(
+        EntityDefinition $definition,
+        Criteria $criteria,
+        Searchbody $search,
+        Context $context
+    ): void {
         $postFilters = $criteria->getPostFilters();
         if (!empty($postFilters)) {
             $pr = null;
             foreach ($postFilters as $filter) {
                 foreach ($filter->getFields() as $f) {
-                    if ($f=='product.listingPrices') {
-                        $pr = $filter;break;
+                    if ($f == 'product.listingPrices') {
+                        $pr = $filter;
+                        break;
                     }
                 }
-                if ($pr === null) { continue; }
+                if ($pr === null) {
+                    continue;
+                }
             }
-            if ($pr !== null ) {                
-                $search->addSearchFilter(['type'=>'minmax', 'key'=>'price', 'value'=>null, 'minValue'=>$pr->getVars()['parameters']['gte'], 'maxValue'=>$pr->getVars()['parameters']['lte']]);
+            if ($pr !== null) {
+                $search->addSearchFilter([
+                    'type' => 'minmax',
+                    'key' => 'price',
+                    'value' => null,
+                    'minValue' => $pr->getVars()['parameters']['gte'],
+                    'maxValue' => $pr->getVars()['parameters']['lte']
+                ]);
             }
         }
         $semknoxFilter = $criteria->getExtension('semknoxDataFilter');
-        if ( ($semknoxFilter===null) ) {
+        if (($semknoxFilter === null)) {
             return;
         }
-        $semknoxData = $semknoxFilter->getVars();        
-        if ( (!is_array($semknoxData['data'])) || (!is_array($semknoxData['data']['filter'])) ) {
+        $semknoxData = $semknoxFilter->getVars();
+        if ((!is_array($semknoxData['data'])) || (!is_array($semknoxData['data']['filter']))) {
             return;
         }
         foreach ($semknoxData['data']['filter'] as $fi) {
-            $filter = ['type'=>'', 'key'=>'', 'value'=>'', 'minValue'=>0, 'maxValue'=>0];
+            $filter = ['type' => '', 'key' => '', 'value' => '', 'minValue' => 0, 'maxValue' => 0];
             $filter['key'] = $fi['name'];
             $filter['name'] = $fi['name'];
             $filter['value'] = $fi['value'];
             $filter['valueList'] = $fi['valueList'];
-            $filter['type']=$fi['valType'];
+            $filter['type'] = $fi['valType'];
             if (in_array(trim($fi['valType']), ['min', 'max'])) {
-                $filter['type']='minmax';
-                $filter['minValue'] = $fi['minValue'];                
+                $filter['type'] = 'minmax';
+                $filter['minValue'] = $fi['minValue'];
                 $filter['maxValue'] = $fi['maxValue'];
             }
-            $search->addSearchFilter($filter) ;
+            $search->addSearchFilter($filter);
         }
     }
     public function addTerm(Criteria $criteria, Searchbody $search, Context $context): void
@@ -490,43 +613,57 @@ class SemknoxsearchHelper
             return;
         }
         $term = $criteria->getTerm();
-        if (trim($term)=='') { return; }
-        $search->addTerm($term);        
+        if (trim($term) == '') {
+            return;
+        }
+        $search->addTerm($term);
         return;
         $reg = $this->getConfigSemknoxRegEx();
         $regRepl = $this->getConfigSemknoxRegExRepl();
-        if ( ($reg!='') && ($regRepl!='') ) {
-                try {
-                    $term = preg_replace($reg, $regRepl , $term);
-                } catch (\Throwable $e) {
-                    $this->logOrThrowException($e);
-                }
-            }        
+        if (($reg != '') && ($regRepl != '')) {
+            try {
+                $term = preg_replace($reg, $regRepl, $term);
+            } catch (\Throwable $e) {
+                $this->logOrThrowException($e);
+            }
+        }
         $search->addTerm($term);
     }
-    public function addQueries(EntityDefinition $definition, Criteria $criteria, Searchbody $search, Context $context): void
-    {
+    public function addQueries(
+        EntityDefinition $definition,
+        Criteria $criteria,
+        Searchbody $search,
+        Context $context
+    ): void {
         $queries = $criteria->getQueries();
         if (empty($queries)) {
             return;
         }
     }
-    public function addSortings(EntityDefinition $definition, Criteria $criteria, Searchbody $search, Context $context): void
-    {
+    public function addSortings(
+        EntityDefinition $definition,
+        Criteria $criteria,
+        Searchbody $search,
+        Context $context
+    ): void {
         foreach ($criteria->getSorting() as $sorting) {
             /**
              * S6-Standards: direction: ASC DESC
-             *                      name: _score 
+             *                      name: _score
              *                               product.name
-             *                               product.listingPrices 
+             *                               product.listingPrices
              */
             $search->addSorting(
                 $this->parser->parseSorting($sorting, $definition, $context)
             );
         }
     }
-    public function addAggregations(EntityDefinition $definition, Criteria $criteria, Searchbody $search, Context $context): void
-    {
+    public function addAggregations(
+        EntityDefinition $definition,
+        Criteria $criteria,
+        Searchbody $search,
+        Context $context
+    ): void {
         return;
     }
     /**
@@ -542,7 +679,7 @@ class SemknoxsearchHelper
         return $this;
     }
     public function isSupported(EntityDefinition $definition, string $controller): bool
-    {                        
+    {
         foreach ($this->supportedControllers as $k) {
             if ($k === $controller) {
                 return true;
@@ -565,14 +702,23 @@ class SemknoxsearchHelper
      * @param number $def
      * @return number|bool|string
      */
-    private function getConfigSelectIntValue($v,$def=0) {
-        $ret=$v;
+    private function getConfigSelectIntValue($v, $def = 0)
+    {
+        $ret = $v;
         if (is_bool($v)) {
-            $v ?  $ret=1 : $ret=0;
+            $v ? $ret = 1 : $ret = 0;
         } else {
-            if (trim($v)=='') { $ret=$def; } else {
-                if (substr($v,0,6)=='_woso_') { $v=substr($v,6); }
-                if (!(ctype_digit($v))) { $ret=$def; } else { $ret=intval($v); }
+            if (trim($v) == '') {
+                $ret = $def;
+            } else {
+                if (substr($v, 0, 6) == '_woso_') {
+                    $v = substr($v, 6);
+                }
+                if (!(ctype_digit($v))) {
+                    $ret = $def;
+                } else {
+                    $ret = intval($v);
+                }
             }
         }
         return $ret;
@@ -582,20 +728,23 @@ class SemknoxsearchHelper
      * @param int $id
      * @return string
      */
-    private function getBaseURLByID($id) {
-        $ret="stage-shopware.semknox.com/";
+    private function getBaseURLByID($id)
+    {
+        $ret = "stage-shopware.semknox.com/";
         switch ($id) {
             case 0  : 
-            case 1  : $ret="https://api-shopware.sitesearch360.com/"; break;
+            case 1  :
+                $ret = "https://api-shopware.sitesearch360.com/";
+                break;
         }
         return $ret;
-    }    
+    }
     public static function getConnection(): Connection
     {
         if (!self::$connection) {
             $url = $_ENV['DATABASE_URL']
-            ?? $_SERVER['DATABASE_URL']
-            ?? getenv('DATABASE_URL');
+                ?? $_SERVER['DATABASE_URL']
+                ?? getenv('DATABASE_URL');
             $parameters = [
                 'url' => $url,
                 'charset' => 'utf8mb4',
@@ -604,19 +753,21 @@ class SemknoxsearchHelper
         }
         return self::$connection;
     }
-    /** 
-     * returns value of a config-parameter 
+    /**
+     * returns value of a config-parameter
      * @param string $value
      */
-    private function getDBConfigValue($value) 
+    private function getDBConfigValue($value)
     {
-        $value=trim($value);
-        $ret=$value;
+        $value = trim($value);
+        $ret = $value;
         try {
-            $h=json_decode($value, true);
-            if ( (is_array($h)) && (count($h)==1) && (isset($h['_value']))) {
-                if (is_string($h['_value'])) { $h['_value'] = trim($h['_value']); }
-                $ret=$h['_value'];
+            $h = json_decode($value, true);
+            if ((is_array($h)) && (count($h) == 1) && (isset($h['_value']))) {
+                if (is_string($h['_value'])) {
+                    $h['_value'] = trim($h['_value']);
+                }
+                $ret = $h['_value'];
             }
         } catch (\Throwable $e) {
             $this->logOrThrowException($e);
@@ -624,7 +775,7 @@ class SemknoxsearchHelper
         return $ret;
     }
     /**
-     * returns hex-transformed channelID 
+     * returns hex-transformed channelID
      * @param string $channelID
      */
     private function getDBConfigChannelID($channelID)
@@ -643,11 +794,12 @@ class SemknoxsearchHelper
      * returns shortened config-key
      * @param string $key
      */
-    private function getDBConfigKey(string $key) 
+    private function getDBConfigKey(string $key)
     {
-        return substr($key,21,1000);        
+        return substr($key, 21, 1000);
     }
-    public function getShopwareConfigValue(string $configKey, string $scID = 'null', $def = null) {
+    public function getShopwareConfigValue(string $configKey, string $scID = 'null', $def = null)
+    {
         $ret = $def;
         if (isset($this->shopwareConfig[$configKey])) {
             if (isset($this->shopwareConfig[$configKey][$scID])) {
@@ -662,11 +814,14 @@ class SemknoxsearchHelper
     }
     /**
      * setup Shopware-Config-Data
-     * [config-key => [ salesChannel => value] 
+     * [config-key => [ salesChannel => value]
      */
-    private function getShopwareConfig() {
-        if (! is_null($this->shopwareConfig)) return;
-        $this->shopwareConfig=[];
+    private function getShopwareConfig()
+    {
+        if (!is_null($this->shopwareConfig)) {
+            return;
+        }
+        $this->shopwareConfig = [];
         $ta = self::$connection->executeQuery('
             SELECT *
             FROM `system_config`
@@ -676,9 +831,13 @@ class SemknoxsearchHelper
             $key = $it['configuration_key'];
             if ($it['sales_channel_id']) {
                 $scid = $this->getHexUUID($it['sales_channel_id']);
-            } else { $scid = 'null'; }
+            } else {
+                $scid = 'null';
+            }
             $val = $this->getDBConfigValue($it['configuration_value']);
-            if (!isset($this->shopwareConfig[$key])) { $this->shopwareConfig[$key] = []; }
+            if (!isset($this->shopwareConfig[$key])) {
+                $this->shopwareConfig[$key] = [];
+            }
             $this->shopwareConfig[$key][$scid] = $val;
         }
     }
@@ -687,28 +846,31 @@ class SemknoxsearchHelper
      */
     private function getSemknoxDBConfig()
     {
-        if (! is_null($this->mainConfigVars)) return;
-        $this->mainConfigVars=[];
+        if (!is_null($this->mainConfigVars)) {
+            return;
+        }
+        $this->mainConfigVars = [];
         $ta = self::$connection->executeQuery('
             SELECT *
             FROM `semknox_config`
             WHERE `configuration_key` LIKE "semknoxSearch%"
         ')->fetchAll(FetchMode::ASSOCIATIVE);
-        $defFound=0;
+        $defFound = 0;
         foreach ($ta as $it) {
-            $k1='';$k2='';                
+            $k1 = '';
+            $k2 = '';
             if ($it['sales_channel_id']) {
-                $k1=$this->getHexUUID($it['sales_channel_id']);
+                $k1 = $this->getHexUUID($it['sales_channel_id']);
             }
             if ($it['domain_id']) {
-                $k2=$this->getHexUUID($it['domain_id']);
+                $k2 = $this->getHexUUID($it['domain_id']);
             }
             if ($it['language_id']) {
-                $k3=$this->getHexUUID($it['language_id']);
-            }            
-            if (($k1!='') && ($k2!='')) {
+                $k3 = $this->getHexUUID($it['language_id']);
+            }
+            if (($k1 != '') && ($k2 != '')) {
                 $this->mainConfigVars[$k1][$k2][$this->getDBConfigKey($it['configuration_key'])] = $this->getDBConfigValue($it['configuration_value']);
-                if ( ($k3!='') && (!isset($this->mainConfigVars[$k1][$k2]['lang_id'])) ) {
+                if (($k3 != '') && (!isset($this->mainConfigVars[$k1][$k2]['lang_id']))) {
                     $this->mainConfigVars[$k1][$k2]['language_id'] = $k3;
                 }
             }
@@ -720,23 +882,45 @@ class SemknoxsearchHelper
      * checking main config, sets the baseURL and valid-tag
      * @param array $config
      */
-    private function checkMainSemknoxConfig(&$config) {
-        foreach($config as $k1 => &$sce) {
-            if ($k1 == '00000000000000000000000000000000') { continue; }
-            foreach($sce as $k2 => &$lange) {
-                $lange['valid']=false;$valid=true;
+    private function checkMainSemknoxConfig(&$config)
+    {
+        foreach ($config as $k1 => &$sce) {
+            if ($k1 == '00000000000000000000000000000000') {
+                continue;
+            }
+            foreach ($sce as $k2 => &$lange) {
+                $lange['valid'] = false;
+                $valid = true;
                 $lange['semknoxBaseUrlID'] = 1;
-                if ($lange['semknoxBaseUrlID']>-1) { $lange['semknoxBaseUrl'] = $this->getBaseURLByID($lange['semknoxBaseUrlID']); }
-                $lange['semknoxCustomerId'] = $lange['semknoxC01CustomerId']; unset ($lange['semknoxC01CustomerId']);
-                $lange['semknoxApiKey'] = $lange['semknoxC01ApiKey']; unset ($lange['semknoxC01ApiKey']);
+                if ($lange['semknoxBaseUrlID'] > -1) {
+                    $lange['semknoxBaseUrl'] = $this->getBaseURLByID($lange['semknoxBaseUrlID']);
+                }
+                $lange['semknoxCustomerId'] = $lange['semknoxC01CustomerId'];
+                unset ($lange['semknoxC01CustomerId']);
+                $lange['semknoxApiKey'] = $lange['semknoxC01ApiKey'];
+                unset ($lange['semknoxC01ApiKey']);
                 $lange['semknoxLang'] = $this->getLanguageCodeById($lange['language_id']);
-                if (trim($lange['semknoxBaseUrl'])=='') { $valid=false; }
-                if (trim($lange['semknoxCustomerId'])=='') { $valid=false; }
-                if (trim($lange['semknoxApiKey'])=='') { $valid=false; }
-                if (empty($lange['semknoxUpdateBlocksize'])) { $lange['semknoxUpdateBlocksize']=500; }
-                if (empty($lange['semknoxActivateCategoryListing'])) { $lange['semknoxActivateCategoryListing']=false; }
-                if (empty($lange['semknoxActivateSearchTemplate'])) { $lange['semknoxActivateSearchTemplate']=false; }
-                if (empty($lange['semknoxActivateAutosuggest'])) { $lange['semknoxActivateAutosuggest']=false; }
+                if (trim($lange['semknoxBaseUrl']) == '') {
+                    $valid = false;
+                }
+                if (trim($lange['semknoxCustomerId']) == '') {
+                    $valid = false;
+                }
+                if (trim($lange['semknoxApiKey']) == '') {
+                    $valid = false;
+                }
+                if (empty($lange['semknoxUpdateBlocksize'])) {
+                    $lange['semknoxUpdateBlocksize'] = 500;
+                }
+                if (empty($lange['semknoxActivateCategoryListing'])) {
+                    $lange['semknoxActivateCategoryListing'] = false;
+                }
+                if (empty($lange['semknoxActivateSearchTemplate'])) {
+                    $lange['semknoxActivateSearchTemplate'] = false;
+                }
+                if (empty($lange['semknoxActivateAutosuggest'])) {
+                    $lange['semknoxActivateAutosuggest'] = false;
+                }
                 $lange['semknoxUpdateBlocksize'] = intval($lange['semknoxUpdateBlocksize']);
                 if ($valid) {
                     $lange['valid'] = true;
@@ -749,25 +933,35 @@ class SemknoxsearchHelper
                 unset($lange);
             }
             unset($sce);
-        }        
+        }
     }
     /**
      * checking main config, sets the baseURL and valid-tag
      * @param array $config
      */
-    public function checkMainConfig(&$config) {
-        $config['valid']=false;$valid=true;
-        if ($config['semknoxBaseUrlID']>-1) { $config['semknoxBaseUrl'] = $this->getBaseURLByID($config['semknoxBaseUrlID']); }
-        if (trim($config['semknoxBaseUrl'])=='') { $valid=false; }
-        if (trim($config['semknoxCustomerId'])=='') { $valid=false; }
-        if (trim($config['semknoxApiKey'])=='') { $valid=false; }
+    public function checkMainConfig(&$config)
+    {
+        $config['valid'] = false;
+        $valid = true;
+        if ($config['semknoxBaseUrlID'] > -1) {
+            $config['semknoxBaseUrl'] = $this->getBaseURLByID($config['semknoxBaseUrlID']);
+        }
+        if (trim($config['semknoxBaseUrl']) == '') {
+            $valid = false;
+        }
+        if (trim($config['semknoxCustomerId']) == '') {
+            $valid = false;
+        }
+        if (trim($config['semknoxApiKey']) == '') {
+            $valid = false;
+        }
         if ($valid) {
             $config['valid'] = true;
         } else {
             $config['semknoxActivate'] = false;
             $config['semknoxActivateUpdate'] = false;
             $config['semknoxActivateCategoryListing'] = false;
-            $config['semknoxActivateSearchTemplate'] = false;            
+            $config['semknoxActivateSearchTemplate'] = false;
         }
     }
     /**
@@ -775,12 +969,15 @@ class SemknoxsearchHelper
      * @param string $scID
      * @param string $domainID
      */
-    public function getMainConfigParams(string $scID, string $domainID) {
-        $ret=null;
-        if ( (empty($scID)) || (empty($domainID)) ) { return $ret; }
-        if ( (is_array($this->mainConfigVars)) && (isset($this->mainConfigVars[$scID])) && (isset($this->mainConfigVars[$scID][$domainID])) ) {
-            $ret=null;
-            if ( (is_array($this->mainConfigVars[$scID][$domainID])) ) {
+    public function getMainConfigParams(string $scID, string $domainID)
+    {
+        $ret = null;
+        if ((empty($scID)) || (empty($domainID))) {
+            return $ret;
+        }
+        if ((is_array($this->mainConfigVars)) && (isset($this->mainConfigVars[$scID])) && (isset($this->mainConfigVars[$scID][$domainID]))) {
+            $ret = null;
+            if ((is_array($this->mainConfigVars[$scID][$domainID]))) {
                 $ret = $this->mainConfigVars[$scID][$domainID];
             }
             return $ret;
@@ -793,15 +990,16 @@ class SemknoxsearchHelper
      * @param bool $useDefault
      * @return string
      */
-    public function getSalesChannelID(bool $useDefault=true) {
-        if (trim($this->salesChannelID)!='') {
+    public function getSalesChannelID(bool $useDefault = true)
+    {
+        if (trim($this->salesChannelID) != '') {
             return $this->salesChannelID;
         } elseif ($useDefault) {
             return DEFAULTS::SALES_CHANNEL;
         }
         return '';
     }
-    public function setSalesChannelID(string $scID) : void
+    public function setSalesChannelID(string $scID): void
     {
         $this->salesChannelID = $scID;
     }
@@ -810,12 +1008,12 @@ class SemknoxsearchHelper
      * @param SalesChannelContext $context
      * @return string
      */
-    public function getSalesChannelFromSCContext(SalesChannelContext $context) : string
+    public function getSalesChannelFromSCContext(SalesChannelContext $context): string
     {
-        $ret='';
+        $ret = '';
         $sc = $context->getSalesChannel();
         if (is_object($sc)) {
-            $ret=$sc->getId();
+            $ret = $sc->getId();
         } else {
         }
         return $ret;
@@ -825,9 +1023,9 @@ class SemknoxsearchHelper
      * @param SalesChannelContext $context
      * @return string
      */
-    public function getLanguageFromSCContext(SalesChannelContext $context) : string
+    public function getLanguageFromSCContext(SalesChannelContext $context): string
     {
-        $ret='';
+        $ret = '';
         $sc = $context->getSalesChannel();
         if (is_object($sc)) {
             $ret = $sc->getLanguageId();
@@ -835,20 +1033,22 @@ class SemknoxsearchHelper
         }
         return $ret;
     }
-    public function setDomainToSCContextExt(SalesChannelContext $context, array $data) {
+    public function setDomainToSCContextExt(SalesChannelContext $context, array $data)
+    {
         $context->addExtension('semknoxDataDomain', new ArrayEntity(
             [
                 'data' => $data
             ]));
     }
-    public function getDomainFromSCContextExt(SalesChannelContext $context): string {
-        $ret='';
+    public function getDomainFromSCContextExt(SalesChannelContext $context): string
+    {
+        $ret = '';
         $domData = $context->getExtension('semknoxDataDomain');
-        if ( ($domData===null) ) {
+        if (($domData === null)) {
             return $ret;
         }
         $domain = $domData->getVars();
-        if ( (!is_array($domain)) || (!isset($domain['data']))   ) {
+        if ((!is_array($domain)) || (!isset($domain['data']))) {
             return $ret;
         }
         $data = [];
@@ -856,60 +1056,62 @@ class SemknoxsearchHelper
             if (!is_array($domain['data']['data'])) {
                 return $ret;
             }
-            $data=$domain['data']['data'];
+            $data = $domain['data']['data'];
         } else {
             if (isset($domain['data'])) {
                 if (!is_array($domain['data'])) {
                     return $ret;
                 }
-                $data=$domain['data'];
+                $data = $domain['data'];
             }
         }
-        if (empty($data)) { return $ret; }
+        if (empty($data)) {
+            return $ret;
+        }
         if (isset($data['domainId'])) {
-            $ret=$data['domainId'];
+            $ret = $data['domainId'];
         }
         return $ret;
     }
-    public function getDomainURLFromSCContext(SalesChannelContext $context) : string
+    public function getDomainURLFromSCContext(SalesChannelContext $context): string
     {
-        $ret='';
+        $ret = '';
         if (method_exists($context, 'getSalesChannel')) {
-        	$sc=$context->getSalesChannel();
-	        if (method_exists($sc, 'getDomains')) {
-	        	$ret = $sc->getDomains()->first()->getUrl();
-	        }
-      	}
-      	return $ret;
-		}    
+            $sc = $context->getSalesChannel();
+            if (method_exists($sc, 'getDomains')) {
+                $ret = $sc->getDomains()->first()->getUrl();
+            }
+        }
+        return $ret;
+    }
     /**
      * returns languageID from context
      * @param SalesChannelContext $context
      * @return string
      */
-    public function getDomainFromSCContext(SalesChannelContext $context) : string
+    public function getDomainFromSCContext(SalesChannelContext $context): string
     {
-        $ret='';
-        if (method_exists($context, 'getDomainId')) {
+        $ret = '';
+        if ((method_exists($context, 'getDomainId')) && (!empty($context->getDomainId()))) {
             $ret = $context->getDomainId();
         } else {
-            $h=$this->requestStack->getCurrentRequest()->get('sw-domain-id');            
-            if ( (!is_null($h)) && (trim($h)!='') ) {
+            $h = $this->requestStack->getCurrentRequest()->get('sw-domain-id');
+            if ((!is_null($h)) && (trim($h) != '')) {
                 $ret = $h;
                 return $ret;
             }
-            $shopDom=$this->requestStack->getCurrentRequest()->get('sw-sales-channel-absolute-base-url');
-            if ( (is_null($shopDom)) || (trim($shopDom)!='') ) {
-                $shopDom=$this->requestStack->getCurrentRequest()->get('sw-storefront-url');
+            $shopDom = $this->requestStack->getCurrentRequest()->get('sw-sales-channel-absolute-base-url');
+            if ((is_null($shopDom)) || (trim($shopDom) != '')) {
+                $shopDom = $this->requestStack->getCurrentRequest()->get('sw-storefront-url');
             }
-            $ret='';
+            $ret = '';
             if ($shopDom) {
                 $domListObj = ($context->getSalesChannel()->getDomains());
                 if (is_object($domListObj)) {
                     $domList = $domListObj->getElements();
-                    foreach($domList as $domId => $dom) {
+                    foreach ($domList as $domId => $dom) {
                         if ($dom->getUrl() == $shopDom) {
-                            $ret=$domId;
+                            $ret = $domId;
                             break;
                         }
                     }
@@ -923,30 +1125,34 @@ class SemknoxsearchHelper
      * @param Context $context
      * @return string
      */
-    private function getSalesChannelFromContext(Context $context) : string
+    private function getSalesChannelFromContext(Context $context): string
     {
-        $ret='';
+        $ret = '';
         $contextSource = $context->getSource();
         if (is_object($contextSource)) {
-            var_dump($contextSource);            
+            var_dump($contextSource);
         } else {
         }
         return $ret;
     }
-    public function getDBData(string $query, array $results, string $key='') : array
+    public function getDBData(string $query, array $results, string $key = ''): array
     {
         $ta = self::$connection->executeQuery($query)->fetchAll(FetchMode::ASSOCIATIVE);
-        $res=array();
+        $res = array();
         foreach ($ta as $it) {
-            if (count($results)==0) {
-              $r=$ta;  
+            if (count($results) == 0) {
+                $r = $ta;
             } else {
-                $r=[];
-                foreach($results as $k) {
+                $r = [];
+                foreach ($results as $k) {
                     $r[$k] = $it[$k];
                 }
             }
-            if ($key=='') { $res[]=$r; } else { $res[$it[$key]]=$r; }
+            if ($key == '') {
+                $res[] = $r;
+            } else {
+                $res[$it[$key]] = $r;
+            }
         }
         return $res;
     }
@@ -957,7 +1163,7 @@ class SemknoxsearchHelper
     {
         if (array_key_exists($arg, $params) === true) {
             $value = $params[$arg];
-            $value = is_object($value) ? (array) $value : $value;
+            $value = is_object($value) ? (array)$value : $value;
             unset($params[$arg]);
             return $value;
         } else {
@@ -968,7 +1174,8 @@ class SemknoxsearchHelper
      * returns the shopware-version as a string if not composer2-InstalledVersions is used (pre shopware 6.3)
      * @return string
      */
-    public static function getShopwareVersion_compo1(): string {
+    public static function getShopwareVersion_compo1(): string
+    {
         $versions = Versions::VERSIONS;
         if (isset($versions['shopware/core'])) {
             $shopwareVersion = Versions::getVersion('shopware/core');
@@ -983,15 +1190,22 @@ class SemknoxsearchHelper
      * returns the shopware-version as a string
      * @return string
      */
-    public static function getShopwareVersion(): string {
+    public static function getShopwareVersion(): string
+    {
         if (class_exists('Composer\InstalledVersions', false) === false) {
             return self::getShopwareVersion_compo1();
         }
+        $usecore=0;
         if (InstalledVersions::isInstalled('shopware/core')) {
+            $usecore=1;
             $shopwareVersion = InstalledVersions::getVersion('shopware/core');
         } else {
             $shopwareVersion = InstalledVersions::getVersion('shopware/platform');
         }
+        if ( ($usecore) && (is_null($shopwareVersion)) ) {
+            $shopwareVersion = InstalledVersions::getVersion('shopware/platform');
+        }
+        if (is_null($shopwareVersion)) { return ''; }
         $shopwareVersion = ltrim($shopwareVersion, 'v');
         return $shopwareVersion;
     }
@@ -1002,59 +1216,56 @@ class SemknoxsearchHelper
      * @param string $compare
      * @return bool
      */
-     public static function shopwareVersionCompare(string $version, string $compare): bool
-     {
-         $shopwareVersion = self::getShopwareVersion();
-         return version_compare($shopwareVersion, $version, $compare);
-     }
-    private function setSessionID($request) {
+    public static function shopwareVersionCompare(string $version, string $compare): bool
+    {
+        $shopwareVersion = self::getShopwareVersion();
+        return version_compare($shopwareVersion, $version, $compare);
+    }
+    private function setSessionID($request)
+    {
         $session = $request->hasSession() ? $request->getSession() : null;
         if (!is_null($session)) {
-            $this->sessionId = $session->get('sessionId') ;
+            $this->sessionId = $session->get('sessionId');
         }
     }
-    public function getCurrentSessionId() : string {
-        $ret='';
+    public function getCurrentSessionId(): string
+    {
+        $ret = '';
         return $ret;
     }
-    private function setPluginVersion() {
-        $res=$this->getQueryResult("SELECT * FROM plugin WHERE name='semknoxSearch'");
+    private function setPluginVersion()
+    {
+        $res = $this->getQueryResult("SELECT * FROM plugin WHERE name='semknoxSearch'");
         if (count($res)) {
             $this->pluginVersion = $res[0]['version'];
         }
     }
-    public function getHeaderInfoData() : array {
+    public function getHeaderInfoData(): array
+    {
         $ip = '';
-        if (!empty($_SERVER['REMOTE_ADDR'])) { $ip = $_SERVER['REMOTE_ADDR']; }
-        $ret= [
+        if (!empty($_SERVER['REMOTE_ADDR'])) {
+            $ip = $_SERVER['REMOTE_ADDR'];
+        }
+        $ret = [
             'shopsys' => 'SHOPWARE',
             'shopsysver' => $this->getShopwareVersion(),
             'clientip' => $ip,
-            'sessionid'=>$this->sessionId,
+            'sessionid' => $this->sessionId,
             'extver' => $this->pluginVersion
         ];
         return $ret;
-    }
-    public function add_ending_slash(string $path) : string
-    {
-        $slash_type = (strpos($path, '\\')===0) ? 'win' : 'unix';
-        $last_char = substr($path, strlen($path)-1, 1);
-        if ($last_char != '/' and $last_char != '\\') {
-            $path .= ($slash_type == 'win') ? '\\' : '/';
-        }
-        return $path;
     }
     /**
      * returns time of last update from db-semknox-logs.
      * no update running - return 0
      * if last entry = update.finished, return 0
      */
-    public function getUpdateRunning() : Int
+    public function getUpdateRunning(): int
     {
         $lastentries = $this->getQueryResult("SELECT logtype, status, created_at from semknox_logs WHERE logtype like 'update.%' order by created_at desc LIMIT 3");
-        $ret=0;
+        $ret = 0;
         foreach ($lastentries as $ent) {
-            if ($ent['logtype']!='update.finished') {
+            if ($ent['logtype'] != 'update.finished') {
                 $ret = strtotime($ent['created_at']);
             }
             break;
@@ -1065,10 +1276,10 @@ class SemknoxsearchHelper
      * returns log-entry of running sitesearch-update-process from semknox-log-db.
      * if there is none running, return []
      */
-    public function getLastUpdateStart() : array
+    public function getLastUpdateStart(): array
     {
         $lastentries = $this->getQueryResult("SELECT logtype, status, logdescr, created_at from semknox_logs WHERE logtype like 'update.start' order by created_at desc LIMIT 3");
-        $ret=[];
+        $ret = [];
         foreach ($lastentries as $ent) {
             if (!empty($ent['logdescr'])) {
                 $ret = json_decode($ent['logdescr'], true);
@@ -1082,14 +1293,15 @@ class SemknoxsearchHelper
      * returns log-entry of whole process of sitesearch-update from semknox-log-db.
      * if there is none running, return []
      */
-    public function getLastUpdateProcessStart(?int $minCreate=0) : array
+    public function getLastUpdateProcessStart(?int $minCreate = 0): array
     {
         if ($minCreate) {
-            $lastentries = $this->getQueryResult("SELECT logtype, status, logdescr, created_at from semknox_logs WHERE logtype like 'update.process.start' AND created_at < '".date("Y-m-d H:i:s.u", $minCreate)."' order by created_at desc LIMIT 3");
+            $lastentries = $this->getQueryResult("SELECT logtype, status, logdescr, created_at from semknox_logs WHERE logtype like 'update.process.start' AND created_at < '" . date("Y-m-d H:i:s.u",
+                    $minCreate) . "' order by created_at desc LIMIT 3");
         } else {
             $lastentries = $this->getQueryResult("SELECT logtype, status, logdescr, created_at from semknox_logs WHERE logtype like 'update.process.start' order by created_at desc LIMIT 3");
         }
-        $ret=[];
+        $ret = [];
         foreach ($lastentries as $ent) {
             $ret['time'] = strtotime($ent['created_at']);
             break;
@@ -1100,10 +1312,10 @@ class SemknoxsearchHelper
      * returns log-entry of running sitesearch-update-process from semknox-log-db.
      * if there is none running, return []
      */
-    public function getLastUpdateFinished() : array
+    public function getLastUpdateFinished(): array
     {
         $lastentries = $this->getQueryResult("SELECT logtype, status, logdescr, created_at from semknox_logs WHERE logtype like 'update.finished' order by created_at desc LIMIT 3");
-        $ret=[];
+        $ret = [];
         foreach ($lastentries as $ent) {
             if (!empty($ent['logdescr'])) {
                 $ret = json_decode($ent['logdescr'], true);
@@ -1120,13 +1332,13 @@ class SemknoxsearchHelper
      * @param int $doCreate
      * @return string
      */
-    public function getLogDirSubPath(string $subpath, int $doCreate=0) : string 
+    public function getLogDirSubPath(string $subpath, int $doCreate = 0): string
     {
-        $ret =  $this->add_ending_slash($this->logDir).$subpath;
+        $ret = $this->add_ending_slash($this->logDir) . $subpath;
         if ($doCreate) {
             $p = dirname($ret);
             if (!is_dir($p)) {
-                mkdir($p,0777, true);
+                mkdir($p, 0777, true);
             }
         }
         return $ret;
@@ -1138,7 +1350,8 @@ class SemknoxsearchHelper
             $limit = $request->request->getInt('limit', $limit);
         }
         $limit = 0;
-        $limit = $limit > 0 ? $limit : $this->systemConfigService->getInt('core.listing.productsPerPage', $context->getSalesChannel()->getId());
+        $limit = $limit > 0 ? $limit : $this->systemConfigService->getInt('core.listing.productsPerPage',
+            $context->getSalesChannel()->getId());
         return $limit <= 0 ? 24 : $limit;
     }
     public function getPage(Request $request): int
@@ -1154,16 +1367,20 @@ class SemknoxsearchHelper
      * @param string $str
      * @return string
      */
-    public function addFilterPrefix(string $str) : string {
-        if (is_null($str)) return $str;
-        return self::FilterPrefix.$str;
+    public function addFilterPrefix(string $str): string
+    {
+        if (is_null($str)) {
+            return $str;
+        }
+        return self::FilterPrefix . $str;
     }
     /**
      * returns List of filter-properties
      * @param string $queryString
      * @return array
      */
-    public function getFilterPropertiesList(string $queryString) : array {
+    public function getFilterPropertiesList(string $queryString): array
+    {
         return explode(self::FilterListSeparator, $queryString);
     }
     /**
@@ -1171,7 +1388,544 @@ class SemknoxsearchHelper
      * @param string $queryString
      * @return array
      */
-    public function getFilterPropertiesEntity(string $queryString) : array {
+    public function getFilterPropertiesEntity(string $queryString): array
+    {
         return explode(self::FilterPrefix, $queryString);
+    }
+    /**
+     * adds an ending slash to the directory-path, if necessary
+     * @param string $path
+     * @return string
+     */
+    public function add_ending_slash(string $path): string
+    {
+        $slash_type = (strpos($path, '\\') === 0) ? 'win' : 'unix';
+        $last_char = substr($path, strlen($path) - 1, 1);
+        if ($last_char != '/' and $last_char != '\\') {
+            $path .= ($slash_type == 'win') ? '\\' : '/';
+        }
+        return $path;
+    }
+    /**
+     * generate current used blockfile for upload-processes
+     * @param integer $maxProducts
+     * @param $limit
+     * @param SalesChannelContext $salesChannelContext
+     * @return void
+     */
+    public function uploadblocks_generate(int $maxProducts, $limit, SalesChannelContext $salesChannelContext)
+    {
+        try {
+            $blockcount = ($maxProducts / $limit);
+            if (is_float($blockcount)) {
+                $blockcount = intval($blockcount) + 1;
+            } else {
+                $blockcount = intval($blockcount);
+            }
+            $scId = $salesChannelContext->getSalesChannel()->getId();
+            $langId = $salesChannelContext->getSalesChannel()->getLanguageId();
+            $domainId = $this->getDomainFromSCContextExt($salesChannelContext);
+            $blockstruct = $this->uploadblocks_loaddata();
+            if (!is_array($blockstruct)) {
+                $blockstruct = [
+                    'lastSC' => $scId,
+                    'lastDomain' => $domainId,
+                    'startTime' => time(),
+                    'lastchange' => time(),
+                    'status' => 0,
+                    'scList' => []
+                ];
+            }
+            $blockstruct['scList'][$scId . '#' . $domainId] = [
+                'saleschannelId' => $scId,
+                'domainId' => $domainId,
+                'languageId' => $langId,
+                'maxProducts' => $maxProducts,
+                'blockcount' => $blockcount,
+                'limit' => $limit,
+                'status' => 0,
+                'lastchange' => 0,
+                'blocks' => []
+            ];
+            $b = [
+                'offset' => -1,
+                'status' => 0,
+                'startTime' => 0,
+                'endTime' => 0,
+                'errorcount' => 0,
+                'retrycount' => 0,
+                'error' => '',
+                'lastchange' => 0
+            ];
+            $blockstruct['scList'][$scId . '#' . $domainId]['blocks'][-1] = $b;
+            for ($i = 0; $i < $blockcount; $i++) {
+                $offset = $i * $limit;
+                $b = [
+                    'offset' => $offset,
+                    'status' => 0,
+                    'startTime' => 0,
+                    'endTime' => 0,
+                    'errorcount' => 0,
+                    'retrycount' => 0,
+                    'error' => '',
+                    'lastchange' => 0
+                ];
+                $blockstruct['scList'][$scId . '#' . $domainId]['blocks'][$offset] = $b;
+            }
+            $b = [
+                'offset' => 10000000000,
+                'status' => 0,
+                'startTime' => 0,
+                'endTime' => 0,
+                'errorcount' => 0,
+                'retrycount' => 0,
+                'error' => '',
+                'lastchange' => 0
+            ];
+            $blockstruct['scList'][$scId . '#' . $domainId]['blocks'][10000000000] = $b;
+            $fn = $this->uploadblocks_getblockfilename();
+            $blockstruct['lastchange'] = time();
+            $blockstruct['scList'][$scId . '#' . $domainId]['lastchange'] = time();
+            $this->uploadblocks_savedata($blockstruct);
+        } catch (\Throwable $t) {
+            $this->logData(1, 'uploadblocks_generate.ERROR', ['msg' => $t->getMessage()], 500);
+        }
+    }
+    /**
+     * return blockfilename of saleschannel/domainId
+     * @return string
+     */
+    public function uploadblocks_getblockfilename(): string
+    {
+        return $this->add_ending_slash($this->logDir) . 'uplblocks.json';
+    }
+    /**
+     * return datafilename for saleschannelContext
+     * @return string
+     */
+    public function uploadblocks_getproductfilename(SalesChannelContext $salesChannelContext): string
+    {
+        try {
+            $scId = $salesChannelContext->getSalesChannel()->getId();
+            $domainId = $this->getDomainFromSCContextExt($salesChannelContext);
+            return $this->add_ending_slash($this->logDir) . 'allprods_'.$scId.'_'.$domainId.'.json';
+        } catch (\Throwable $t) {
+            $this->logData(1, 'uploadblocks_getproductfilename.ERROR', ['msg' => $t->getMessage()], 500);
+            return '';
+        }
+    }
+    public function uploadblocks_setBlockStatusBySC(
+        SalesChannelContext $salesChannelContext,
+        int $offset,
+        int $status,
+        string $error = '',
+        int $overwriteTime = 0
+    ): int {
+        try {
+            $scId = $salesChannelContext->getSalesChannel()->getId();
+            $domainId = $this->getDomainFromSCContextExt($salesChannelContext);
+            return $this->uploadblocks_setBlockStatus($scId, $domainId, $offset, $status, $error, $overwriteTime);
+        } catch (\Throwable $t) {
+            $this->logData(1, 'uploadblocks_setBlockStatusBySC.ERROR', ['msg' => $t->getMessage()], 500);
+            return -1;
+        }
+    }
+    public function uploadblocks_setBlockStatus(
+        string $saleschannelId,
+        string $domainId,
+        int $offset,
+        int $status,
+        string $error = '',
+        int $overwriteTime = 0
+    ): int {
+        try {
+            $blockstruct = $this->uploadblocks_loaddata();
+            if (($saleschannelId=='') && ($domainId=='') && ($offset==-1000)) {
+                $blockstruct['status'] = $status;
+                $blockstruct['lastchange'] = time();
+                $blockstruct['lastSC'] = $saleschannelId;
+                $blockstruct['lastDomain'] = $domainId;
+            }
+            if ((isset($blockstruct['scList'][$saleschannelId . '#' . $domainId]['blocks'][$offset])) &&
+                (is_array($blockstruct['scList'][$saleschannelId . '#' . $domainId]['blocks'][$offset]))) {
+                $t=time();
+                if ($overwriteTime > 0) { $t=$overwriteTime; }
+                $blockstruct['scList'][$saleschannelId . '#' . $domainId]['blocks'][$offset]['status'] = $status;
+                if (trim($error) != '') {
+                    $blockstruct['scList'][$saleschannelId . '#' . $domainId]['blocks'][$offset]['errorcount']++;
+                    $blockstruct['scList'][$saleschannelId . '#' . $domainId]['blocks'][$offset]['error'] .= $error . "\n";
+                }
+                if ($status >= 100) {
+                    $blockstruct['scList'][$saleschannelId . '#' . $domainId]['blocks'][$offset]['endTime'] = $t;
+                }
+                if ($status == 1) {
+                    $blockstruct['scList'][$saleschannelId . '#' . $domainId]['blocks'][$offset]['startTime'] = $t;
+                }
+                $blockstruct['scList'][$saleschannelId . '#' . $domainId]['blocks'][$offset]['lastchange'] = $t;
+                $blockstruct['scList'][$saleschannelId . '#' . $domainId]['lastchange'] = time();
+                if ( ($offset==10000000000) &&  ($status >= 100) ) {
+                    $blockstruct['scList'][$saleschannelId . '#' . $domainId]['status'] = 100;
+                }
+                if ( ($offset==-1) &&  ($status = 100) ) {
+                    $blockstruct['scList'][$saleschannelId . '#' . $domainId]['status'] = 1;
+                }
+                $blockstruct['lastchange'] = time();
+                $blockstruct['lastSC'] = $saleschannelId;
+                $blockstruct['lastDomain'] = $domainId;
+            }
+            $this->uploadblocks_savedata($blockstruct);
+            return 0;
+        } catch (\Throwable $t) {
+            $this->logData(1, 'uploadblocks_setBlockStatus.ERROR', ['msg' => $t->getMessage()], 500);
+            return -1;
+        }
+    }
+    public function uploadblocks_startNextBlock(): ?array
+    {
+        $ret = null;
+        try {
+            $blockstruct = $this->uploadblocks_loaddata();
+            if (is_null($blockstruct)) { return null; }
+            $blockstruct = $this->uploadblocks_checkSingleBlocks($blockstruct);
+            $lastSC = null;
+            foreach ($blockstruct['scList'] as &$scItem) {
+                $cfinished=0;
+                if ($scItem['status'] < -999) { continue; }
+                if ($scItem['status'] >= 100 ) { $lastSC = $scItem; continue; }
+                foreach ($scItem['blocks'] as $k => &$block) {
+                    $finish = false;
+                    if ($k == -1) { continue; }
+                    if ($k == 10000000000) {
+                        if ($cfinished == (count($scItem['blocks']) -2) ) {
+                            $finish = true;
+                        } else {
+                            continue;
+                        }
+                    }
+                    if ($block['status'] >= 100) {
+                        $cfinished++;
+                    }
+                    if ( ($block['status'] <= 0) && ($block['status'] > -1000) ) {
+                        $block['status'] = 1;
+                        $block['startTime'] = time();
+                        $blockstruct['lastchange'] = time();
+                        $blockstruct['lastSC'] = $scItem['saleschannelId'];
+                        $blockstruct['lastDomain'] = $scItem['domainId'];
+                        $block['lastchange'] = time();
+                        $ret = [
+                            'usData' => [
+                                'scID' => $scItem['saleschannelId'],
+                                'langID' => $scItem['languageId'],
+                                'domainID' => $scItem['domainId'],
+                                'provider' => 'product',
+                                'offset' => $block['offset'],
+                                'finished' => $finish,
+                                'limit' => $scItem['limit'],
+                                'startnext' => false
+                            ]
+                        ];
+                    }
+                    unset($block);
+                    if (!is_null($ret)) {
+                        break;
+                    }
+                }
+                unset($scItem);
+                if (!is_null($ret)) {
+                    break;
+                }
+            }
+            if ( (is_null($ret)) && (!is_null($lastSC)) && ($blockstruct['status'] <= 100) ) {
+                $ret = [
+                    'usData' => [
+                        'scID' => $lastSC['saleschannelId'],
+                        'langID' => $lastSC['languageId'],
+                        'domainID' => $lastSC['domainId'],
+                        'provider' => 'product',
+                        'offset' => 0,
+                        'finished' => true,
+                        'limit' => $lastSC['limit'],
+                        'startnext' => true
+                    ]
+                ];
+            }
+            $this->uploadblocks_savedata($blockstruct);
+        } catch (\Throwable $t) {
+            var_dump($t->getMessage());
+            $this->logData(1, 'uploadblocks_startNextBlock.ERROR', ['msg' => $t->getMessage()], 500);
+            return null;
+        }
+        return $ret;
+    }
+    /**
+     * returns the offset of the next block by saleschannelcontext
+     * @param SalesChannelContext $salesChannelContext
+     * @return int
+     */
+    public function uploadblocks_startnextOffsetBySC(SalesChannelContext $salesChannelContext): int
+    {
+        try {
+            $ret = -10000;
+            $saleschannelId = $salesChannelContext->getSalesChannel()->getId();
+            $domainId = $this->getDomainFromSCContextExt($salesChannelContext);
+            $blockstruct = $this->uploadblocks_loaddata();
+            foreach ($blockstruct['scList'][$saleschannelId . '#' . $domainId]['blocks'] as $k => &$block) {
+                if ( ($k==-1) || ($k==10000000000) ) { continue; }
+                if ($block['status'] <= 0) {
+                    $block['status'] = 1;
+                    $block['startTime'] = time();
+                    $blockstruct['lastchange'] = time();
+                    $blockstruct['lastSC'] = $saleschannelId;
+                    $blockstruct['lastDomain'] = $domainId;
+                    $block['lastchange'] = time();
+                    $ret = $block['offset'];
+                }
+                unset($block);
+                if ($ret >= 0) {
+                    break;
+                }
+            }
+            $this->uploadblocks_savedata($blockstruct);
+        } catch (\Throwable $t) {
+            $this->logData(1, 'uploadblocks_startnextOffsetBySC.ERROR', ['msg' => $t->getMessage()], 500);
+            return -1000;
+        }
+        return $ret;
+    }
+    /**
+     * returns the structure of the blockfile-data, using lockfile-mechanism
+     * @param int $dolock
+     * @return array|null
+     */
+    private function uploadblocks_loaddata(int $dolock = 1): ?array
+    {
+        $blockstruct = null;
+        $blockfilename = $this->uploadblocks_getblockfilename();
+        $lockfilename = $blockfilename . '.lock';
+        try {
+            $dostop = 0;
+            srand(intval(time() / (60 * 60 * 24)));
+            $waittime = 0;
+            do {
+                if (file_exists($lockfilename)) {
+                    $wt = rand(100, 1000);
+                    $waittime += $wt;
+                    usleep($wt);
+                } else {
+                    $dostop = 1;
+                }
+            } while (($dostop == 0) && ($waittime < 1000000));
+            if ($dostop == 0) {
+                return null;
+            }
+            if ($dolock) {
+                if ($dolock) {
+                    touch($lockfilename);
+                }
+                if (file_exists($blockfilename)) {
+                    $blockstruct = json_decode(file_get_contents($blockfilename), true);
+                } else {
+                    if ($dolock) {
+                        unlink($lockfilename);
+                    }
+                }
+            }
+        } catch (\Throwable $t) {
+            $this->logData(1, 'uploadblocks_loaddata.ERROR', ['msg' => $t->getMessage()], 500);
+            if (file_exists($lockfilename)) {
+                unlink($lockfilename);
+            }
+            return null;
+        }
+        return $blockstruct;
+    }
+    /**
+     * saves the block-structure and removes the lockfile, if necessary
+     * returns 1 if o.k. < 0 on error
+     * @param array $blockstruct
+     * @return int
+     */
+    private function uploadblocks_savedata(array $blockstruct): int
+    {
+        $ret = 0;
+        $blockfilename = $this->uploadblocks_getblockfilename();
+        $lockfilename = $blockfilename . '.lock';
+        try {
+            file_put_contents($blockfilename, \json_encode($blockstruct));
+            if (file_exists($lockfilename)) {
+                unlink($lockfilename);
+            }
+            $ret = 1;
+        } catch (\Throwable $t) {
+            $this->logData(1, 'uploadblocks_savedata.ERROR', ['msg' => $t->getMessage()], 500);
+            if (file_exists($lockfilename)) {
+                unlink($lockfilename);
+            }
+            return -1;
+        }
+        return $ret;
+    }
+    /**
+     * deletes block-file and if existing lockfile for blockhandling
+     * returns 1 if o.k., < 0 on error
+     * @return int
+     */
+    public function uploadblocks_resetFile(): int
+    {
+        $this->cleanLogDB();
+        $ret = 0;
+        $blockfilename = $this->uploadblocks_getblockfilename();
+        $lockfilename = $blockfilename . '.lock';
+        try {
+            if (file_exists($blockfilename)) {
+                unlink($blockfilename);
+            }
+            if (file_exists($lockfilename)) {
+                unlink($lockfilename);
+            }
+            $ret = 1;
+        } catch (\Throwable $t) {
+            $this->logData(1, 'uploadblocks_resetFile.ERROR', ['msg' => $t->getMessage()], 500);
+            if (file_exists($lockfilename)) {
+                unlink($lockfilename);
+            }
+            return -1;
+        }
+        return $ret;
+    }
+    public function uploadblocks_resetProductDataFile(SalesChannelContext $salesChannelContext): int
+    {
+        $ret=0;
+        try {
+            $dataFilename = $this->uploadblocks_getproductfilename($salesChannelContext);
+            if ($dataFilename != '') {
+                if (file_exists($dataFilename)) { unlink($dataFilename); }
+            }
+        } catch (\Throwable $t) {
+            $this->logData(1, 'uploadblocks_resetProductDataFile.ERROR', ['msg' => $t->getMessage()], 500);
+            return -1;
+        }
+        return $ret;
+    }
+    public function uploadblocks_resetAllProductDataFiles(): int
+    {
+        $ret=0;
+        try {
+            $filter = $this->add_ending_slash($this->logDir) . 'allprods_*';
+            $dfiles = glob($filter);
+            foreach ($dfiles as $dfile) {
+                if (file_exists($dfile)) { unlink($dfile); }
+            }
+        } catch (\Throwable $t) {
+            $this->logData(1, 'uploadblocks_resetAllProductDataFiles.ERROR', ['msg' => $t->getMessage()], 500);
+            return -1;
+        }
+        return $ret;
+    }
+    /**
+     * returns 1 if datafile of saleschannelcontext exists, 0 or <0 if an error occurred
+     * @param SalesChannelContext $salesChannelContext
+     * @return int
+     */
+    public function uploadblocks_existsProductDataFile(SalesChannelContext $salesChannelContext): int
+    {
+        $ret=0;
+        try {
+            $dataFilename = $this->uploadblocks_getproductfilename($salesChannelContext);
+            if ($dataFilename != '') {
+                if (file_exists($dataFilename)) { $ret = 1; }
+            } else {
+                return -1;
+            }
+        } catch (\Throwable $t) {
+            $this->logData(1, 'uploadblocks_resetProductDataFile.ERROR', ['msg' => $t->getMessage()], 500);
+            return -1;
+        }
+        return $ret;
+    }
+    /**
+     * checks current blocks for runtime-errors and resets the block, if waiting-time is over
+     * @return array
+     */
+    public function uploadblocks_checkSingleBlocks(?array $blockstruct) : ?array {
+        $ret = $blockstruct;
+        try {
+            if (is_array($blockstruct)) {
+                foreach ($blockstruct['scList'] as &$scItem) {
+                    $scItemComplete = 1;
+                    foreach ($scItem['blocks'] as $k => &$block) {
+                        if ($block['status'] < 100) { $scItemComplete = 0; }
+                        if ($k == -1) { continue; }
+                        if ( ($block['status'] > 0) && ($block['status'] < 100) && ((time() - $block['lastchange']) > self::blockMaxTime) ) {
+                            if ($block['retrycount'] < self::blockMaxRetry) {
+                                $block['retrycount']++;
+                                $block['status'] = 0;
+                            } else {
+                                $block['status'] = -1000;
+                                $scItem['status'] = -1000;
+                                $this->logData(1, 'uploadblocks_checkSingleBlocks.ERROR.Block.'.$block['offset'], ['msg' => 'max. retries reached for block '.$block['offset']], 500);
+                            }
+                        }
+                        unset($block);
+                    }
+                    if ( ($scItemComplete) && ($scItem['status'] < 100) ) {
+                        $scItem['status'] = 100;
+                    }
+                    unset($scItem);
+                }
+                $ret = $blockstruct;
+            }
+        } catch (\Throwable $t) {
+            $this->logData(1, 'uploadblocks_checkSingleBlocks.ERROR', ['msg' => $t->getMessage()], 500);
+        }
+        return $ret;
+    }
+    /**
+     * checks status of whole update-process, lockfiles etc.
+     * @return void
+     */
+    public function uploadblocks_checkStatus() {
+        try {
+            $blockfilename = $this->uploadblocks_getblockfilename();
+            $lockfilename = $blockfilename . '.lock';
+            if (!file_exists($lockfilename)) { return; }
+            $filemtime = @filemtime($lockfilename);  
+            if (!$filemtime or (time() - $filemtime >= self::blockMaxTime)) {
+                unlink($lockfilename);
+                $this->logData(1, 'uploadblocks_checkStatus.Warning.lockfile.released', ['msg' => 'released lockfile after '.self::blockMaxTime.' seconds'], 400);
+            }
+        } catch (\Throwable $t) {
+            $this->logData(1, 'uploadblocks_checkStatus.ERROR', ['msg' => $t->getMessage()], 500);
+        }
+    }
+    /**
+     * returns an array containing at least status- and resultText-fields
+     * @param array|null $res
+     * @param int $artype
+     * @return array
+     */
+    public function apiResult_asArray(?array $res = null, int $artype = 1): array {
+        $ret = ['status' => -1, 'resultText' => ''];
+        if ( (is_null($res)) || (!is_array($res)) ) {
+            return $ret;
+        }
+        if (!isset($res['status'])) { $res['status'] = -1; }
+        if (!isset($res['resultText'])) { $res['resultText'] = ''; }
+        return $res;
+    }
+    public function cleanLogDB() {
+        try {
+            $dt = new \DateTime();
+            $dt->sub(new \DateInterval('P'.self::maxLogDays.'D'));
+            $query = "SELECT logtype, status, created_at from semknox_logs WHERE logtype like 'update.finished' AND created_at < '".$dt->format('Y-m-d H:i:s')."' order by created_at DESC LIMIT 1";
+            $lastentries = $this->getQueryResult($query);
+            if (!empty($lastentries)) {
+                $lastfin = $lastentries[0];
+                $q2 = "DELETE FROM semknox_logs WHERE created_at < '".$lastfin['created_at']."'";
+                $this->execQuery($q2);
+            }
+        } catch (\Throwable $t) {
+            $this->logData(1, 'cleanLogDB.ERROR', ['msg' => $t->getMessage()], 500);
+        }
     }
 }

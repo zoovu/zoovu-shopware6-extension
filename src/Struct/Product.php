@@ -7,6 +7,7 @@
  */
 namespace semknox\search\Struct;
 use Shopware\Core\Framework\Struct\Struct;
+use semknox\search\Framework\SemknoxsearchHelper;
 class Product extends Struct
 {    
     /**
@@ -182,6 +183,15 @@ class Product extends Struct
      * @var array
      */
     private $properties = [];
+    /**
+     *
+     * @var SemknoxsearchHelper
+     */
+    private $semknoxSearchHelper;
+    public function __construct(SemknoxsearchHelper $helper)
+    {
+        $this->semknoxSearchHelper = $helper;
+    }
     /**
      * @return string
      */
@@ -590,8 +600,11 @@ class Product extends Struct
                             $hr[]=$cat['id'];
                         }
                     }
-                    $h=[];$h['path']=$hr;
-                    $ret[]=$h;
+                    if (!empty($hr)) {
+                        $h = [];
+                        $h['path'] = $hr;
+                        $ret[] = $h;
+                    }
                 }
             }
         }        
@@ -604,26 +617,32 @@ class Product extends Struct
     private function getApiV3SemknoxAttributes() : array
     {
         $ret=[];
-        $ret[] =["key" => "SKU", "value" => "".$this->getProductNumber()];
-        $ret[] =["key" => "price", "value" => "".$this->getCurPurchasePrice()];
-        $ret[] =["key" => "description", "value" => $this->getDescription()];
-        $ret[] =["key" => "EAN", "value" => "".$this->getEAN()];
-        $ret[] =["key" => "manufacturer", "value" => $this->getManufacturer()];
-        $ret[] =["key" => "manufacturerNumber", "value" => $this->getManufacturerNumber()];
-        $ret[] =["key" => "shippingTime", "value" => "".$this->getDeliveryTime()];
-        $ret[] =["key" => "availability", "value" => "".$this->getStockAsString()];
-        $ret[] =["key" => "inStock", "value" => "".$this->getStock()];
-        $ret[] =["key" => "releaseDate", "value" => date("Y-m-d" , $this->getReleaseDate()->getTimestamp())];
-        $ret[] =["key" => "salesCount", "value" => "".$this->getSalesCount()];
-        $ret[] =["key" => "votingCount", "value" => "".$this->getVotesCount()];
-        $ret[] =["key" => "votingValue", "value" => "".$this->getVotesValue()];
-        $ret[] =["key" => "clickRate", "value" => "".$this->getProductClicks()];
-        foreach($this->properties as $prop) {
-            $key = $prop['name'];
-            if ( (is_null($key)) || (trim($key)=='') ) { continue; }
-            foreach($prop['values'] as $v) {
-                $ret[] = [ "key" => $key, "value" => "".$v['name'] ];
+        try {
+            $ret[] = ["key" => "SKU", "value" => "" . $this->getProductNumber()];
+            $ret[] = ["key" => "price", "value" => "" . $this->getCurPurchasePrice()];
+            $ret[] = ["key" => "description", "value" => $this->getDescription()];
+            $ret[] = ["key" => "EAN", "value" => "" . $this->getEAN()];
+            $ret[] = ["key" => "manufacturer", "value" => $this->getManufacturer()];
+            $ret[] = ["key" => "manufacturerNumber", "value" => $this->getManufacturerNumber()];
+            $ret[] = ["key" => "shippingTime", "value" => "" . $this->getDeliveryTime()];
+            $ret[] = ["key" => "availability", "value" => "" . $this->getStockAsString()];
+            $ret[] = ["key" => "inStock", "value" => "" . $this->getStock()];
+            $ret[] = ["key" => "releaseDate", "value" => date("Y-m-d", $this->getReleaseDate()->getTimestamp())];
+            $ret[] = ["key" => "salesCount", "value" => "" . $this->getSalesCount()];
+            $ret[] = ["key" => "votingCount", "value" => "" . $this->getVotesCount()];
+            $ret[] = ["key" => "votingValue", "value" => "" . $this->getVotesValue()];
+            $ret[] = ["key" => "clickRate", "value" => "" . $this->getProductClicks()];
+            foreach ($this->properties as $prop) {
+                $key = $prop['name'];
+                if ((is_null($key)) || (trim($key) == '')) {
+                    continue;
+                }
+                foreach ($prop['values'] as $v) {
+                    $ret[] = ["key" => $key, "value" => "" . $v['name']];
+                }
             }
+        } catch (\Throwable $t) {
+            $this->semknoxSearchHelper->logData(100, 'getApiV3SemknoxAttributes.ERROR', ['msg' => $t->getMessage(), 'result' => $ret, 'properties' => $this->properties], 500);
         }
         return $ret;
     }
