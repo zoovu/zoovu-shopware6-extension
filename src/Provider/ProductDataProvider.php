@@ -112,7 +112,6 @@ class ProductDataProvider implements ProductProviderInterface
     {
         try {
             if (is_null($offset)) { $offset = 0; }
-            $this->preferences = $this->semknoxSearchHelper->getPreferences();
             $this->allProdsList=[];
             if ($this->preferences['semknoxUpdateUseVariantMaster']) {
                 $query = "select HEX(id) as id, product_number from product where ( (active > 0) OR ( (isnull(active)) AND (NOT isnull(parent_id)) ) )";
@@ -179,6 +178,7 @@ class ProductDataProvider implements ProductProviderInterface
         */
         $np="";
         $np = $this->semknoxSearchHelper->uploadblocks_getproductfilename($salesChannelContext);
+        $this->preferences = $this->semknoxSearchHelper->getPreferences();
         if (!file_exists($np)) {
             $ot=time();
             $this->genAllProdsList($salesChannelContext, $np, $offset, $limit);
@@ -397,10 +397,16 @@ class ProductDataProvider implements ProductProviderInterface
         if (isset($urlInfo['scheme'])) {
             $encodedPath = "{$urlInfo['scheme']}://";
         }
-        if (isset($urlInfo['host'])) {
-            $encodedPath .= "{$urlInfo['host']}";
+        if ($this->preferences['semknoxChangeMediaDomain']) {
+            $encodedPath = $this->host;
+            unset($urlInfo['port']);
         } else {
-            $encodedPath .=  $this->host;            
+            if (isset($urlInfo['host'])) {
+                $encodedPath .= "{$urlInfo['host']}";
+            } else {
+                $encodedPath = $this->host;
+                unset($urlInfo['port']);
+            }
         }
         if (isset($urlInfo['port'])) {
             $encodedPath .= ":{$urlInfo['port']}";

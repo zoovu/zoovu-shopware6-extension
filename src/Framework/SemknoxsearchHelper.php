@@ -349,7 +349,8 @@ class SemknoxsearchHelper
             'semknoxUpdateBlocksize' => 500,
             'semknoxUpdateUseVariantMaster' => false,
             'semknoxUpdateUploadContent' => true,
-            'semknoxRedirectOn1' => false
+            'semknoxRedirectOn1' => false,
+            'semknoxChangeMediaDomain' => true
         ];
         $h = $this->getMainConfigParams('00000000000000000000000000000000', '00000000000000000000000000000000');
         if ((isset ($h['semknoxUpdateCronTime'])) &&
@@ -375,6 +376,9 @@ class SemknoxsearchHelper
         }
         if (isset ($h['semknoxRedirectOn1'])) {
             $ret['semknoxRedirectOn1'] = $h['semknoxRedirectOn1'];
+        }
+        if (isset ($h['semknoxChangeMediaDomain'])) {
+            $ret['semknoxChangeMediaDomain'] = $h['semknoxChangeMediaDomain'];
         }
         $ret['semknoxUpdateCronTimeList'] = [];
         $i = $ret['semknoxUpdateCronTime'];

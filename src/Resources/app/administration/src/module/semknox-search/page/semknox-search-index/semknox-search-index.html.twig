@@ -352,7 +352,23 @@
 															</sw-inherit-wrapper>
 														{% endblock %}
 
-								                    </div>
+														{% block semknox_search_content_card_channel_config_preferences_card_container_settings_changemediadomain %}
+															<sw-inherit-wrapper v-model="ScLangPrefConfigData['semknoxSearch.config.semknoxChangeMediaDomain']"
+																				:customInheritationCheckFunction="checkTextFieldInheritance">
+																<template #content="props">
+																	<sw-checkbox-field name="semknoxSearch.config.semknoxChangeMediaDomain"
+																					   :mapInheritance="props"
+																					   :label="$tc('semknox-search.settingForm.credentials.changemediadomain.label')"
+																					   :helpText="$tc('semknox-search.settingForm.credentials.changemediadomain.tooltipText')"
+																					   :disabled="props.isInherited || !aclAllowed('semknox_search.editor')"
+																					   :value="props.currentValue"
+																					   @change="props.updateCurrentValue">
+																	</sw-checkbox-field>
+																</template>
+															</sw-inherit-wrapper>
+														{% endblock %}
+
+													</div>
 								                  {% endblock %}
 								                  								                  
 								              {% endblock %}
