@@ -1,3 +1,6 @@
+#3.3.8
+- bugfix call decorated ajax on searchcontroller with wrong paramsorting
+
 #3.3.7
 - set filtervalues on autoremove-function of shopware to remove not-set values
 - bugfix filter-panel added value propertyName
