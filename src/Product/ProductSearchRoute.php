@@ -454,6 +454,10 @@ class ProductSearchRoute extends AbstractProductSearchRoute
         if ($f>-1) { unset($data[$f]); }
         return $ret;
     }
+    private function getTagIDFromName(string $name) : string
+    {
+        return str_replace(['(', ')', '{', '}', '/', '\\', '@'], ['#','#','#','#','#','#','#'], $name);
+    }
     /**
      * creating interna datasctucture of shopware from the range-values of sitesearch
      * @param array $data
@@ -463,6 +467,7 @@ class ProductSearchRoute extends AbstractProductSearchRoute
     {
         $ret=[];
         foreach ($data as $k => $v) {
+            $v['tagid'] = $this->getTagIDFromName($v['name']);
             if ($v['type']=='RANGE') {
                 $sum=0;$anz=0;
                 $f=$k;
