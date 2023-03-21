@@ -61,6 +61,7 @@ export default class JsAutosuggestPlugin extends Plugin {
         
         window.ss360Config = {
             siteId: siteId,
+            ecom: true,
             baseUrl: this.options.apiUrl+'search?projectId=' + siteId +ap,
             suggestBaseUrl: this.options.apiUrl+'search/suggestions?projectId=' + siteId + ap,            
             suggestions: {

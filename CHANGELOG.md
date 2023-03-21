@@ -1,3 +1,14 @@
+#3.3.8
+- bugfix call decorated ajax on searchcontroller with wrong paramsorting
+
+#3.3.7
+- set filtervalues on autoremove-function of shopware to remove not-set values
+- bugfix filter-panel added value propertyName
+- bugfix fix property-name of filtervalues with control-characters {}()/\@
+
+#3.3.6
+added ecom-param to autosuggest-json
+
 #3.3.5
 configurable change of media-url-domain to shop-domain in update-process
 

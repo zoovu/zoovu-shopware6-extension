@@ -174,7 +174,7 @@ class SearchController extends ShopwareSearchController
     public function ajax(Request $request, SalesChannelContext $context): Response
     {
         if ($this->semknoxSearchHelper->useSiteSearch($context, $request) === false) {
-            return $this->decorated->ajax($context, $request);
+            return $this->decorated->ajax($request, $context);
         }
         $request->request->set('no-aggregations', true);
         $page = $this->searchPageLoader->load($request, $context);

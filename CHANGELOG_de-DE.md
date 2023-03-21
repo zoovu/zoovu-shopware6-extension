@@ -1,3 +1,6 @@
+#3.3.6
+added ecom-param to autosuggeest-json
+
 #3.3.5
 configurable change of media-url-domain to shop-domain in update-process
 
