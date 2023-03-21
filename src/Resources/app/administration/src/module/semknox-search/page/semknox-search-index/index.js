@@ -351,6 +351,10 @@ Shopware.Component.register('semknox-search-index', {
 					this.semknoxPrefConfigData['semknoxSearch.config.semknoxRedirectOn1'] = false;
 					this.ScLangPrefConfigData['semknoxSearch.config.semknoxRedirectOn1'] = false;
 				}
+				if (!this.semknoxPrefConfigData.hasOwnProperty('semknoxSearch.config.semknoxChangeMediaDomain')) {
+					this.semknoxPrefConfigData['semknoxSearch.config.semknoxChangeMediaDomain'] = true;
+					this.ScLangPrefConfigData['semknoxSearch.config.semknoxChangeMediaDomain'] = true;
+				}
 
 				this.checkRequiredPrefFields();
 				//this.semknoxConfigData = res;
@@ -401,6 +405,10 @@ Shopware.Component.register('semknox-search-index', {
 				if (!this.semknoxConfigData.hasOwnProperty('semknoxSearch.config.semknoxRedirectOn1')) {
 					this.semknoxConfigData['semknoxSearch.config.semknoxRedirectOn1'] = false;
 					this.ScLangConfigData['semknoxSearch.config.semknoxRedirectOn1'] = false;
+				}
+				if (!this.semknoxConfigData.hasOwnProperty('semknoxSearch.config.semknoxChangeMediaDomain')) {
+					this.semknoxConfigData['semknoxSearch.config.semknoxChangeMediaDomain'] = true;
+					this.ScLangConfigData['semknoxSearch.config.semknoxChangeMediaDomain'] = true;
 				}
 				if (!this.semknoxConfigData.hasOwnProperty('semknoxSearch.config.semknoxActivateCategoryListing')) {
 					this.semknoxConfigData['semknoxSearch.config.semknoxActivateCategoryListing'] = false;
@@ -539,6 +547,7 @@ Shopware.Component.register('semknox-search-index', {
 			this.saveSinglePref('semknoxSearch.config.semknoxUpdateUseVariantMaster');
 			this.saveSinglePref('semknoxSearch.config.semknoxUpdateUploadContent');
 			this.saveSinglePref('semknoxSearch.config.semknoxRedirectOn1');
+			this.saveSinglePref('semknoxSearch.config.semknoxChangeMediaDomain');
 		},
 		
 		saveSingle(configId) {

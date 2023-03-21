@@ -21,7 +21,8 @@
                                     name: 'properties',
                                     displayName: property.translated.name,
                                     displayType: property.displayType,
-                                    pluginSelector: 'filter-property-select'
+                                    pluginSelector: 'filter-property-select',
+                                    propertyName: property.translated.name
                                 } %}
                             {% endfor %}
                         {% endif %}
@@ -43,7 +44,7 @@
                                             name: mmfilter.semkAr.name,
                                             minKey: mmfilter.semkSr.name ~ '_min',
                                             maxKey: mmfilter.semkSr.name ~ '_max',
-                                            displayName: mmfilter.semkAr.name|trans|sw_sanitize,
+                                            displayName: mmfilter.semkAr.name|sw_sanitize,
                                         } %}
                                     
                                                       {% endif %}

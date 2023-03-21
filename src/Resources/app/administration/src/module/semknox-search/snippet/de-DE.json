@@ -119,6 +119,10 @@
 					"label" : "autom. Weiterleitung bei einem Produkt im Suchergebnis",
 					"tooltipText" : "Wenn Sie automatisch auf die Produktseite eines einzelnen Produkts im Suchergebnis weiterleiten wollen, setzen Sie hier den Haken."
 				},
+				"changemediadomain" : {
+					"label" : "Tausche Media-Domain gegen Shop-Domain",
+					"tooltipText" : "Wenn Sie die Domain der autom. generierten Media-URL gegen die Shop-Domain tauschen wollen, setzen Sie hier den Haken."
+				},
                 "semknoxActivateCategoryListing": {
                 	"label" : "Nutze SiteSearch360 für das Kategorie-Listing",
                 	"tooltipText": "Aktiviere diese Option, um die Daten für die Kategorie-Listings ebenfalls durch SiteSearch360 zu generieren."

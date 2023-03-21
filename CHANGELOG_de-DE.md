@@ -1,3 +1,9 @@
+#3.3.6
+added ecom-param to autosuggeest-json
+
+#3.3.5
+configurable change of media-url-domain to shop-domain in update-process
+
 #3.3.4
 redirect on one product in search result (with config)
 fix for arrays in custom entities of properties
