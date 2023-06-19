@@ -163,7 +163,7 @@ class FullUpdateCommand extends Command
         $this->resetRestartFile();
         $this->helper->uploadblocks_resetFile();
         $this->helper->uploadblocks_resetAllProductDataFiles();
-        $this->generateData(new semknoxFUData(null, null, null, null, null, null, false));
+        $this->generateData(new semknoxFUData(null, null, null, null, null, $this->preferences['semknoxUpdateBlocksize'], false));
         return 0;
     }
     /**

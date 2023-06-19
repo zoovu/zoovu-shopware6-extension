@@ -1,3 +1,7 @@
+#3.3.9
+- bugfix on limit-changes in config
+- added UTC-hint for backend-config of start-time
+
 #3.3.8
 - bugfix call decorated ajax on searchcontroller with wrong paramsorting
 
