@@ -410,7 +410,7 @@ class SemknoxsearchHelper
             return null;
         }
         if ($doUpdate) {
-            if ((!$ret['semknoxActivate']) && (!$ret['semknoxActivateUpdate'])) {
+            if ((!$ret['semknoxActivate']) || (!$ret['semknoxActivateUpdate'])) {
                 $ret = null;
             }
         } else {

@@ -1,3 +1,6 @@
+#3.3.10
+- bugfix update on saleschannel with update disabled
+
 #3.3.9
 - bugfix on limit-changes in config
 - added UTC-hint for backend-config of start-time
