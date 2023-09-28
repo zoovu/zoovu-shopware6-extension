@@ -916,14 +916,17 @@ class SemknoxsearchHelper
                 if (empty($lange['semknoxUpdateBlocksize'])) {
                     $lange['semknoxUpdateBlocksize'] = 500;
                 }
-                if (empty($lange['semknoxActivateCategoryListing'])) {
+                if ( (empty($lange['semknoxActivateCategoryListing']))  || (!is_bool($lange['semknoxActivateCategoryListing'])) )  {
                     $lange['semknoxActivateCategoryListing'] = false;
                 }
-                if (empty($lange['semknoxActivateSearchTemplate'])) {
+                if ( (empty($lange['semknoxActivateSearchTemplate']))  || (!is_bool($lange['semknoxActivateSearchTemplate'])) )  {
                     $lange['semknoxActivateSearchTemplate'] = false;
                 }
-                if (empty($lange['semknoxActivateAutosuggest'])) {
+                if ( (empty($lange['semknoxActivateAutosuggest'])) || (!is_bool($lange['semknoxActivateAutosuggest'])) )  {
                     $lange['semknoxActivateAutosuggest'] = false;
+                }
+                if ( (empty($lange['semknoxActivateUpdate'])) || (!is_bool($lange['semknoxActivateUpdate'])) ) {
+                    $lange['semknoxActivateUpdate'] = false;
                 }
                 $lange['semknoxUpdateBlocksize'] = intval($lange['semknoxUpdateBlocksize']);
                 if ($valid) {

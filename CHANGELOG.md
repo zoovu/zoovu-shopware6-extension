@@ -1,3 +1,6 @@
+#3.3.11
+- added default values for config-data if no boolean-value was selected
+
 #3.3.10
 - bugfix update on saleschannel with update disabled
 
