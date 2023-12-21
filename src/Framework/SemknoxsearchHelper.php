@@ -195,7 +195,7 @@ class SemknoxsearchHelper
             }
         }
         if ($logType > 0) {
-            $outT = date('Y-m-d H:i:s') . ' :: ' . $entryName;
+            $outT = date('Y-m-d H:i:s') . '::' .getmypid(). ' :: ' . $entryName;
             if (is_null($this->outputInt)) {
                 echo "\n$outT";
             } else {
@@ -208,6 +208,7 @@ class SemknoxsearchHelper
         if ($logTitle == '') {
             $logTitle = $entryName;
         }
+        $additionalData['pid'] = getmypid();
         $this->logRepository->create(
             [
                 [
@@ -1660,6 +1661,53 @@ class SemknoxsearchHelper
         } catch (\Throwable $t) {
             var_dump($t->getMessage());
             $this->logData(1, 'uploadblocks_startNextBlock.ERROR', ['msg' => $t->getMessage()], 500);
+            return null;
+        }
+        return $ret;
+    }
+    /**
+     * checking all upload-blocks, if everything is ready, stop upload by setting Blockstatus to 100
+     * @return void|null
+     */
+    public function uploadblocks_CheckAndSetBlockStatus() {
+        try {
+            $blockstruct = $this->uploadblocks_loaddata();
+            if (is_null($blockstruct)) { return; }
+            $scFinishedCount = 0;
+            foreach ($blockstruct['scList'] as &$scItem) {
+                if ($scItem['status'] >= 100 ) { $scFinishedCount++; }
+            }
+            $this->uploadblocks_savedata($blockstruct);
+            if ($scFinishedCount == count($blockstruct['scList'])) {
+                $this->logData(100, 'updatecheck:finished');
+                $this->uploadblocks_setBlockStatus('','', -1000, 100);
+            }
+        } catch (\Throwable $t) {
+            var_dump($t->getMessage());
+            $this->logData(1, 'uploadblocks_CheckAndSetBlockStatus.ERROR', ['msg' => $t->getMessage()], 500);
+            return null;
+        }
+    }
+    public function uploadblocks_getSCStatus(string $scId, string $domainId, string $langId): ?int
+    {
+        $ret = null;
+        try {
+            $blockstruct = $this->uploadblocks_loaddata();
+            if (is_null($blockstruct)) { return $ret; }
+            $this->uploadblocks_savedata($blockstruct);
+            if ($scId=='') {
+                if (isset($blockstruct['status'])) {
+                    return $blockstruct['status'];
+                }
+            } else {
+                if (isset($blockstruct['scList'][$scId.'#'.$domainId])) {
+                    $scItem = $blockstruct['scList'][$scId.'#'.$domainId];
+                    return $scItem['status'];
+                }
+            }
+        } catch (\Throwable $t) {
+            var_dump($t->getMessage());
+            $this->logData(1, 'uploadblocks_getSCStatus.ERROR', ['msg' => $t->getMessage()], 500);
             return null;
         }
         return $ret;

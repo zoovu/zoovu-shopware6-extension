@@ -1,3 +1,7 @@
+#3.3.12
+- added pid of running process to log-info
+- bugfixing for parallel uploads: generated a new cancel function to avoid restarting uploads that have already started
+
 #3.3.11
 - added default values for config-data if no boolean-value was selected
 

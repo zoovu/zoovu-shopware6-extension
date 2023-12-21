@@ -281,8 +281,11 @@ class FullUpdateCommand extends Command
         $this->helper->uploadblocks_checkStatus();
         $salesChannelContext = $this->getSalesChannelContext($message);
         if (!($salesChannelContext instanceof SalesChannelContext)) {
-            $this->helper->logData(100, 'update.finished');
-            $this->helper->uploadblocks_setBlockStatus('','', -1000, 100);
+            $this->helper->uploadblocks_CheckAndSetBlockStatus();
+            $upStatus = $this->helper->uploadblocks_getSCStatus('','','');
+            if ( (! is_null($upStatus)) && ($upStatus == 100) ) {
+                $this->helper->logData(100, 'update.finished');
+            }
             return;
         }
         $mainConfig = $this->helper->allowSalesChannel($salesChannelContext->getSalesChannel()->getId(), $this->helper->getDomainFromSCContextExt($salesChannelContext), 1);
@@ -322,6 +325,16 @@ class FullUpdateCommand extends Command
                 if ($this->firstStart) {
                     $this->helper->logData(100, 'update.process.start',[]);
                     $this->firstStart=0;
+                }
+                if ($this->isNewSC) {
+                    $scStatus = $this->helper->uploadblocks_getSCStatus($salesChannelContext->getSalesChannel()->getId(), $this->helper->getDomainFromSCContextExt($salesChannelContext), $salesChannelContext->getSalesChannel()->getLanguageId() );
+                    $additional=['scStatus'=>$scStatus];
+                    $this->helper->logData(100, 'update.checkSCStatus: '.$scStatus,$additional);
+                    if ( (!is_null($scStatus)) && ($scStatus<>0) ) {
+                        $newMessage = new semknoxFUData($salesChannelContext->getSalesChannel()->getId(), $salesChannelContext->getSalesChannel()->getLanguageId(),  $this->helper->getDomainFromSCContextExt($salesChannelContext), "", 0, $this->preferences['semknoxUpdateBlocksize'], true);
+                        $this->generateData($newMessage);
+                        return;
+                    }
                 }
                 $additional=['usData' => ['scID'=>$salesChannelContext->getSalesChannel()->getId(), 'langID'=>$salesChannelContext->getSalesChannel()->getLanguageId(), 'domainID' => $this->helper->getDomainFromSCContextExt($salesChannelContext), 'provider'=> $message->getLastProvider(), 'offset'=>$message->getNextOffset()]];
                 if ($this->isNewSC) {
