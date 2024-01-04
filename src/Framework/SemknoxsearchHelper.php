@@ -1674,13 +1674,25 @@ class SemknoxsearchHelper
             $blockstruct = $this->uploadblocks_loaddata();
             if (is_null($blockstruct)) { return; }
             $scFinishedCount = 0;
+            $scErrorCount = 0;
             foreach ($blockstruct['scList'] as &$scItem) {
+                foreach ($scItem['blocks'] as $block) {
+                    if ($block['status'] <= -1000) {
+                        $scItem['status'] = -1000;
+                    }
+                }
                 if ($scItem['status'] >= 100 ) { $scFinishedCount++; }
+                if ($scItem['status'] <= -1000) { $scErrorCount++; }
             }
             $this->uploadblocks_savedata($blockstruct);
             if ($scFinishedCount == count($blockstruct['scList'])) {
                 $this->logData(100, 'updatecheck:finished');
                 $this->uploadblocks_setBlockStatus('','', -1000, 100);
+            }
+            if (($scFinishedCount+$scErrorCount) == count($blockstruct['scList'])) {
+                $this->logData(100, 'updatecheck:errors');
+                $this->logData(100, 'updatecheck:finished');
+                $this->uploadblocks_setBlockStatus('','', -1000, -1000);
             }
         } catch (\Throwable $t) {
             var_dump($t->getMessage());

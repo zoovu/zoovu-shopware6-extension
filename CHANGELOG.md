@@ -1,3 +1,7 @@
+#3.3.13
+- recognize unrecoverable errors in block-struct
+-  finish update-process on unrecoverable errors 
+
 #3.3.12
 - added pid of running process to log-info
 - bugfixing for parallel uploads: generated a new cancel function to avoid restarting uploads that have already started

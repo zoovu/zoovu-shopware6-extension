@@ -286,6 +286,10 @@ class FullUpdateCommand extends Command
             if ( (! is_null($upStatus)) && ($upStatus == 100) ) {
                 $this->helper->logData(100, 'update.finished');
             }
+            if ( (! is_null($upStatus)) && ($upStatus <= -1000) ) {
+                $this->helper->logData(100, 'update.finished.with.errors!');
+                $this->helper->logData(100, 'update.finished');
+            }
             return;
         }
         $mainConfig = $this->helper->allowSalesChannel($salesChannelContext->getSalesChannel()->getId(), $this->helper->getDomainFromSCContextExt($salesChannelContext), 1);
