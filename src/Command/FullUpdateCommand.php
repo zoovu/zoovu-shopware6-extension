@@ -114,8 +114,9 @@ class FullUpdateCommand extends Command
         if ($isupdateRunning != 0) {
             $lastUpdate = time()-$isupdateRunning;            
             $this->helper->setLogRepository($this->logRepository);
-            if ($this->checkRestart($lastUpdate, $startData)) {                
+            if ($this->checkRestart($lastUpdate, $startData)) {
                 $scID='';$langID='';$domainID='';
+                $startData = $this->getLastStartRunning(1);
                 if ( (!empty($startData)) && (isset($startData['usData'])) && (isset($startData['usData']['scID']))  && (isset($startData['usData']['langID']))   && (isset($startData['usData']['domainID'])) ) {
                     $scID = $startData['usData']['scID'];
                     $langID = $startData['usData']['langID'];
@@ -128,7 +129,7 @@ class FullUpdateCommand extends Command
                 $this->helper->logData(100, 'update.finished', $additional);
             } else {
                 $runData = $this->helper->uploadblocks_startNextBlock();
-                if ( (!empty($runData)) && (isset($runData['usData'])) && (isset($runData['usData']['scID']))  && (isset($runData['usData']['langID']))  && (isset($startData['usData']['domainID'])) ) {
+                if ( (!empty($runData)) && (isset($runData['usData'])) && (isset($runData['usData']['scID']))  && (isset($runData['usData']['langID']))  && (isset($runData['usData']['domainID'])) ) {
                     $scID = $runData['usData']['scID'];
                     $langID = $runData['usData']['langID'];
                     $domainID = $runData['usData']['domainID'];
@@ -144,15 +145,17 @@ class FullUpdateCommand extends Command
                 return 0;
             }
         } else {
-            if ($this->checkRestart(0,$startData)==0) {
-                $nextStart = $this->getNextStartTime();
-                if ($nextStart > time()) { return 0; }
-                if ( (!empty($startData)) && (is_array($startData)) && (isset($startData['time'])) ) {
-                    $lastBaseStarttime = $this->getLastBaseStartTime($startData);
-                    if ($lastBaseStarttime > 0) {
-                        $lastInterval = time() - $lastBaseStarttime;
-                        if ( $lastInterval < ( (intval($this->preferences['semknoxUpdateCronInterval'])*60*60) - ($this->updateTimeMinRange*60) ) ) {
-                            return 0;
+            if ($this->checkRestart(0,$startData) == 0) {
+                $nextStart = $this->getNextStartTime($startData['time']);
+                if ($nextStart > $this->helper->getLocalTimeTC()) { return 0; }
+                if ($this->preferences['semknoxUpdateCronInterval'] < 13) {
+                    if ( (!empty($startData)) && (is_array($startData)) && (isset($startData['time'])) ) {
+                        $lastBaseStarttime = $this->getLastBaseStartTime($startData);
+                        if ($lastBaseStarttime > 0) {
+                            $lastInterval = time() - $lastBaseStarttime;
+                            if ( $lastInterval < ( (intval($this->preferences['semknoxUpdateCronInterval'])*60*60) - ($this->updateTimeMinRange*60) ) ) {
+                                return 0;
+                            }
                         }
                     }
                 }
@@ -182,14 +185,62 @@ class FullUpdateCommand extends Command
     }
     /**
      * generating timestamp of next starting time by semknoxUpdateCronTimeList.
+     * Depending on the hour in the list and current timestamp, returning the Timestamp of next Starttime.
+     * @return number
+     */
+    private function getNextStartTime($lastStart)
+    {
+        $ret = -1;
+        $minHour = -1;
+        if ($lastStart) { $minHour = intval($this->helper->getLocalTimeTC($lastStart,'H')); }
+        $nowHour = intval($this->helper->getLocalTimeTC(time(), 'H'));
+        $nowMinute = intval(date('i'));
+        foreach ($this->preferences['semknoxUpdateCronTimeList'] as $h) {
+            $nextStart = mkTime($h, 0, 0, intval(date("n")) , intval(date("j")) , intval(date("Y")) );
+            if ( ($nextStart > $lastStart) ) {
+                if ( ($h == $nowHour) && ($nowMinute <= ($this->updateTimeMinRange)) ) {
+                    $ret = $h;
+                    break;
+                }
+                if ($h > $nowHour) {
+                    $ret=$h; break;
+                }
+            }
+        }
+        $nextday=0;
+        if ($ret==-1) {
+            $nextday=1;
+            $ret=$this->preferences['semknoxUpdateCronTimeList'][0];
+        }
+        $ret = mkTime($ret, 0, 0, intval(date("n")) , intval(date("j")) , intval(date("Y")) );
+        if ($this->helper->getLocalTimeTC() - $ret > 60*60) {
+            $nextday=1;
+            $ret=mkTime($this->preferences['semknoxUpdateCronTimeList'][0], 0, 0, intval(date("n")) , intval(date("j")) , intval(date("Y")) );
+        }
+        if ($nextday==1) {
+            $date = new \DateTime('');
+            $date->setTimestamp($ret);
+            $date->modify('+1 day');
+            $ret = $date->getTimestamp();
+        }
+        return $ret;
+    }
+            /**
+     * generating timestamp of next starting time by semknoxUpdateCronTimeList.
      * Depending on the hour in the list and current timestamp, returning the Timestamp of next Starttime. A 
      * @return number
      */
-    private function getNextStartTime() {
-        $ret=0;
-        $nh=intval(date('H'));
-        $nm=intval(date('i'));
+    private function deprecated_getNextStartTime($lastStart) {
+        $ret=-1;
+        $lnh = -1;
+        if ($lastStart) { $lnh = intval($this->helper->getLocalTimeTC($lastStart,'H')); }
+        $nh = intval($this->helper->getLocalTimeTC(time(),'H'));
+        $nm = intval(date('i'));
+        $td = intval($this->helper->getLocalTimeTC(time(),'d'));
+        $ld = intval($this->helper->getLocalTimeTC($lastStart,'d'));
+        if ($ld <> $td) { $lnh = -1; }
         foreach ( $this->preferences['semknoxUpdateCronTimeList'] as $h) {
+            if ($h <= $lnh) { continue; }
             if ( ($h == $nh) && ($nm <= ($this->updateTimeMinRange)) ) {
                 $ret=$h;break;
             }
@@ -198,7 +249,7 @@ class FullUpdateCommand extends Command
             }
         }
         $nextday=0;
-        if ($ret==0) {
+        if ($ret==-1) {
             $nextday=1;
             $ret=$this->preferences['semknoxUpdateCronTimeList'][0];
         }
@@ -212,9 +263,9 @@ class FullUpdateCommand extends Command
         return $ret;
     }
    /**
-     * returns time of last update from db-semknox-logs.
-     * no update running - return 0
-     * if last entry = update.finished, return 0
+     * returns time of current update from db-semknox-logs.
+     * if update running : return time of last action-entry
+     * if last entry <> update.finished : return 0
      */
     public function getUpdateRunning() : Int
     {
@@ -232,15 +283,19 @@ class FullUpdateCommand extends Command
      * returns log-entry of running sitesearch-update-process from semknox-log-db.
      * if there is none running, return []
      */
-    public function getLastStartRunning() : array
+    public function getLastStartRunning(int $typ = 0) : array
     {
-        $lastentries = $this->helper->getQueryResult("SELECT logtype, status, logdescr, created_at from semknox_logs WHERE logtype like 'update.start' order by created_at desc LIMIT 3");
-        $ret=[];
+        $sel = 'update.process.start';
+        if ($typ == 1) {
+            $sel = 'update.start';
+        }
+        $lastentries = $this->helper->getQueryResult("SELECT logtype, status, logdescr, created_at from semknox_logs WHERE logtype like '$sel' order by created_at desc LIMIT 3");
+        $ret=[];$ret['time']=0;
         foreach ($lastentries as $ent) {
             if (!empty($ent['logdescr'])) {
                 $ret = json_decode($ent['logdescr'], true);
-                $ret['time'] = strtotime($ent['created_at']);
             }
+            $ret['time'] = strtotime($ent['created_at']);
             break;
         }
         return $ret;

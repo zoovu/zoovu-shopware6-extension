@@ -1,6 +1,19 @@
+#3.3.15
+- bugfixing starttime
+
+#3.3.14
+- added function to get local time from Server-Config to get correct local Time of Server for cronjobs
+- changed time from UTC (or current time of shopware) to local time of the server to start cronjob
+- changed starting-procedure of cronjob
+- changed timeout of curl-op to 100s
+- only check restart-interval on updates that have a interval of less than half a day
+- added local-time-function to logging
+- changed laststart-token to update.process.start to get correct starting point of whole update-process, not only last sc
+- bugfixing on bug-reporting updatecheck:finished
+
 #3.3.13
 - recognize unrecoverable errors in block-struct
--  finish update-process on unrecoverable errors 
+- finish update-process on unrecoverable errors 
 
 #3.3.12
 - added pid of running process to log-info

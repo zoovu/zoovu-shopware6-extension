@@ -141,8 +141,8 @@
 						"preferences": {
             	"cardTitle" : "Preferences",
             	"cronTime" : {
-            		"label" : "Cronjob starttime (hour, UTC-Time)",
-            		"tooltipText": "Hour of the day, where the cronjob should start (UTC-Time)."
+            		"label" : "Cronjob starttime (hour, server-time)",
+            		"tooltipText": "Hour of the day, where the cronjob should start (server-time)."
             	},
             	"cronInterval": {
             		"label": "Cronjob Interval",

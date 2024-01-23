@@ -142,8 +142,8 @@
             "preferences": {
             	"cardTitle" : "allgemeine Einstellungen",
             	"cronTime" : {
-            		"label" : "Cronjob starten (Stunde, UTC-Zeit)",
-            		"tooltipText": "Stunde, zu der der Cronjob gestartet werden soll (UTC-Zeit)."
+            		"label" : "Cronjob starten (Stunde, Server-Zeit)",
+            		"tooltipText": "Stunde, zu der der Cronjob gestartet werden soll (Server-Zeit)."
             	},
             	"cronInterval": {
             		"label": "Cronjob Interval",

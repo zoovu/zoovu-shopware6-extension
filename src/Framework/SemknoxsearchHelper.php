@@ -105,6 +105,7 @@ class SemknoxsearchHelper
     private $mainConfigVars = null; 
     private $shopwareConfig = null; 
     private $outputInt = null; 
+    public $serverTimeZone = '';
     /**
      * 
      * public $calculator;
@@ -122,6 +123,7 @@ class SemknoxsearchHelper
         SystemConfigService $systemConfigService
     )
     {
+        $this->setServerTimeZone();
         $this->requestStack = $requestStack;
         $this->client = $client;
         $this->environment = $environment;
@@ -134,6 +136,64 @@ class SemknoxsearchHelper
         $this->getConnection();
         $this->getSemknoxDBConfig();
         $this->getShopwareConfig();
+    }
+    private function setServerTimeZone() {
+        try {
+            $timezone='';
+            if (isset($_SERVER['TZ'])) {
+                $timezone = $_SERVER['TZ'];
+            }
+            if ((empty($timezone)) && (file_exists('/etc/timezone'))) {
+                $timezone = file_get_contents('/etc/timezone');
+            }
+            $timezone = trim($timezone);
+            $zoneList = timezone_identifiers_list(); # list of (all) valid timezones
+            if (in_array($timezone, $zoneList)) {
+                $this->serverTimeZone = $timezone;
+            }
+        } catch (\Throwable $e) {
+            $this->serverTimeZone='';
+        }
+    }
+    public function getLocalTimeTC($time = 0, $format='') {
+        if ($time == 0) {
+            $time = time();
+        }
+        if ($this->serverTimeZone == '')  {
+            if ($format != '') {
+                return date($format, $time);
+            } else {
+                return time();
+            }
+        }
+        $date = \DateTime::createFromFormat('Y-m-d H:i:s', date('Y-m-d H:i:s', $time) );
+        $date->setTimeZone(new \DateTimeZone($this->serverTimeZone));
+        if ($format != '' ){
+            return $date->format($format);
+        }
+        $d = $date->format('Y-m-d H:i:s');
+        return strtotime($d);
+    }
+    /**
+     * returns the mktime according parameter and using localTimeTC
+     * @param int|null $hour
+     * @param int|null $minute
+     * @param int|null $second
+     * @param int|null $month
+     * @param int|null $day
+     * @param int|null $year
+     * @return int
+     */
+    public function getLocalTimeTC_mkTime(?int $hour = null, ?int $minute = null, ?int $second = null, ?int $month = null, ?int $day = null, ?int $year = null) : int
+    {
+        if (is_null($hour)) { $hour = intval($this->getLocalTimeTC(0,'h')); }
+        if (is_null($minute)) { $minute = intval($this->getLocalTimeTC(0,'i')); }
+        if (is_null($second)) { $second = intval($this->getLocalTimeTC(0,'s')); }
+        if (is_null($month)) { $month = intval($this->getLocalTimeTC(0,'m')); }
+        if (is_null($day)) { $day = intval($this->getLocalTimeTC(0,'d')); }
+        if (is_null($year)) { $year = intval($this->getLocalTimeTC(0,'Y')); }
+        $ret = mktime($hour, $minute, $second, $month , $day , $year );
+        return $this->getLocalTimeTC($ret);
     }
     public function logOrThrowException(\Throwable $exception): bool
     {
@@ -195,7 +255,7 @@ class SemknoxsearchHelper
             }
         }
         if ($logType > 0) {
-            $outT = date('Y-m-d H:i:s') . '::' .getmypid(). ' :: ' . $entryName;
+            $outT = $this->getLocalTimeTC( time(), 'Y-m-d H:i:s') . '::' .getmypid(). ' :: ' . $entryName;
             if (is_null($this->outputInt)) {
                 echo "\n$outT";
             } else {
@@ -1286,7 +1346,7 @@ class SemknoxsearchHelper
      */
     public function getLastUpdateStart(): array
     {
-        $lastentries = $this->getQueryResult("SELECT logtype, status, logdescr, created_at from semknox_logs WHERE logtype like 'update.start' order by created_at desc LIMIT 3");
+        $lastentries = $this->getQueryResult("SELECT logtype, status, logdescr, created_at from semknox_logs WHERE logtype like 'update.process.start' order by created_at desc LIMIT 3");
         $ret = [];
         foreach ($lastentries as $ent) {
             if (!empty($ent['logdescr'])) {
@@ -1688,11 +1748,12 @@ class SemknoxsearchHelper
             if ($scFinishedCount == count($blockstruct['scList'])) {
                 $this->logData(100, 'updatecheck:finished');
                 $this->uploadblocks_setBlockStatus('','', -1000, 100);
-            }
-            if (($scFinishedCount+$scErrorCount) == count($blockstruct['scList'])) {
-                $this->logData(100, 'updatecheck:errors');
-                $this->logData(100, 'updatecheck:finished');
-                $this->uploadblocks_setBlockStatus('','', -1000, -1000);
+            } else {
+                if (($scFinishedCount + $scErrorCount) == count($blockstruct['scList'])) {
+                    $this->logData(100, 'updatecheck:errors');
+                    $this->logData(100, 'updatecheck:finished');
+                    $this->uploadblocks_setBlockStatus('', '', -1000, -1000);
+                }
             }
         } catch (\Throwable $t) {
             var_dump($t->getMessage());
