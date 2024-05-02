@@ -22,6 +22,8 @@ Now the plugin is configured and ready for use. For the upload of the data, a cr
 
 This will trigger the cronjob every minute and keep a continuous log file under Shopware's own /var/log directory. Once the cronjob has run once and all data has been uploaded, the upload pauses for 24h so that one upload per day takes place.
 
+With the new support for version 6.5 of Shopware, the extension also allows to do incremental updates which are triggered via the same cronjob which is used for the full updates. You may configure the incremental updates in the corresponding settings section of the extension. Incremental updates are triggered via two different events called *product.written* and *checkoutOrderPlaced*. Please note, that no incremental updates are triggered if a fullupdate is running. Please see additional information in the QA section below.
+
 ***
 Questions:
 
@@ -53,6 +55,22 @@ A: You may use the parallel upload function by configuring the cronjob like this
     */1 * * (sleep 40; php /[SHOPWARE DIRECTORY]/bin/console plugin-commands:semknoxFullUpdate >> /[SHOPWARE DIRECTORY]/var/log/semknox/cron.log)
 
 
+Q: How can I tune which for which product update events an incremental update is triggered?
+
+A: There are some options to react only to certain update event types for incremental updates:
+
+* ordered - is set during checkout
+* price, stock, isCloseout, productNumber - is set on eachproduct.written event and can be used to restrict incremental updates to eg. only price changes
+
+
+Q: Is it possible to stop incremental updates if product data gets imported via Shopware's Admin API?
+
+A: Yes, you may pause the incremental update process by placing a lock file in */[SHOPWARE_INSTALL]/var/log/semknox/singledata.lock*. The process would then be:
+
+* set the lock file in */[SHOPWARE_INSTALL]/var/log/semknox/singledata.lock*
+* run the external product data update against the Shopware Admin API
+* delete the lock file in */[SHOPWARE_INSTALL]/var/log/semknox/singledata.lock*
+* run a full update to upload all data to the SEMKNOX API
 
 ***
 CALLBACKS:
